@@ -1,0 +1,57 @@
+name: Build APK from HTML
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create Cordova project
+        run: |
+          cordova create cordova-app com.medicinepanel.app "Medicine Panel"
+          rm -rf cordova-app/www/*
+          cp -r www/* cordova-app/www/
+
+      - name: Add icon (if provided)
+        run: |
+          if [ -f "icon.png" ]; then
+            mkdir -p cordova-app/res/icon/android
+            cp icon.png cordova-app/res/icon/android/icon.png
+          fi
+
+      - name: Add Android platform
+        working-directory: cordova-app
+        run: cordova platform add android
+
+      - name: Build APK
+        working-directory: cordova-app
+        run: cordova build android
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MedicinePanel-APK
+          path: cordova-app/platforms/android/app/build/outputs/apk/debug/*.apk
