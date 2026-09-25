@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Medicine Panel</title>
+<style>
+:root{
+  --bg:#F3F6F2; --surface:#FFFFFF; --ink:#15272B; --muted:#5B6D70; --line:#DCE4DF;
+  --brand:#0D6A61; --brand-ink:#FFFFFF; --brand-soft:#E0F1EE;
+  --ok:#17694A; --ok-bg:#E3F3EA; --warn:#9A4A06; --warn-bg:#FDF0DC; --bad:#B42318; --bad-bg:#FCE9E7;
+  --shadow:0 1px 2px rgba(20,40,40,.06);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1A1C; --surface:#152528; --ink:#E5EEEB; --muted:#95A7A8; --line:#27393D;
+    --brand:#3DC2B1; --brand-ink:#04211D; --brand-soft:#173A38;
+    --ok:#5FD3A0; --ok-bg:#153A2C; --warn:#F2B25C; --warn-bg:#3D2E12; --bad:#FF8A7E; --bad-bg:#40201D;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1A1C; --surface:#152528; --ink:#E5EEEB; --muted:#95A7A8; --line:#27393D;
+  --brand:#3DC2B1; --brand-ink:#04211D; --brand-soft:#173A38;
+  --ok:#5FD3A0; --ok-bg:#153A2C; --warn:#F2B25C; --warn-bg:#3D2E12; --bad:#FF8A7E; --bad-bg:#40201D;
+  --shadow:none;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.45;min-height:100%}
+body.noscroll{overflow:hidden}
+h1,h2,h3{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;margin:0;letter-spacing:-.01em}
+h1{font-size:24px}
+h2{font-size:18px}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.app{max-width:1080px;margin:0 auto;padding:14px 16px 96px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0 12px}
+.brand{font-family:"Bricolage Grotesque",Figtree,sans-serif;font-weight:700;font-size:20px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabs{display:flex;gap:4px}
+.tab{flex:1;border:0;background:transparent;padding:10px 8px;border-radius:10px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab.on{background:var(--brand);color:var(--brand-ink)}
+.tab:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media (min-width:720px){
+  .tabs{background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:14px;width:max-content;margin-bottom:16px}
+  .tab{flex:none;padding:8px 18px}
+  .app{padding-bottom:40px}
+}
+@media (max-width:719px){
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+  .tab{font-size:11.5px;padding:10px 1px}
+}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 12px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.pad{padding:16px}
+.stack>*+*{margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:10px;font-weight:600;line-height:1.2}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.txt-bad{color:var(--bad)}
+input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:0}
+.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+.f input,.f select{color:var(--ink);font-size:15px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid .full{grid-column:1/-1}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.sub{font-size:13px;color:var(--muted)}
+.sub span+span{margin-left:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));overflow:hidden}
+.stat{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0}
+.stat b{display:block;font-family:"Bricolage Grotesque",Figtree,sans-serif;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.alert b{color:var(--bad)}
+.stat.good b{color:var(--ok)}
+.stat.caution b{color:var(--warn)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media (max-width:820px){.two,.split{grid-template-columns:1fr}}
+.list>.row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
+.list>.row:first-child{border-top:0}
+.grow{flex:1;min-width:0}
+.grow b{overflow-wrap:anywhere}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.in{background:var(--ok-bg);color:var(--ok)}
+.pill.out{background:var(--brand-soft);color:var(--brand)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--line);background:transparent;padding:6px 12px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted)}
+.chip.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+.med{display:grid;grid-template-columns:2.1fr 2fr .7fr .8fr auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
+.med:first-child{border-top:0}
+.med .meta{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.med .acts{display:flex;gap:6px}
+.med .price{font-variant-numeric:tabular-nums;font-weight:600}
+@media (max-width:719px){
+  .med{grid-template-columns:1fr auto;gap:8px 12px}
+  .med .meta{grid-column:1/-1;order:3}
+  .med .price{order:2;text-align:right}
+  .med .acts{grid-column:1/-1;order:4}
+}
+.exp.bad{color:var(--bad);font-weight:600}
+.exp.warn{color:var(--warn);font-weight:600}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.empty h3{color:var(--ink);margin-bottom:6px}
+.empty .btn{margin-top:12px}
+.res{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:transparent;padding:10px 4px}
+.res:hover:not(:disabled){background:var(--brand-soft)}
+.res:disabled{opacity:.55;cursor:not-allowed}
+.crow{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:10px 0;border-top:1px solid var(--line)}
+.crow .qtybox{display:flex;align-items:center;gap:4px}
+.crow .qtybox input{width:56px;text-align:center;padding:7px 4px}
+.crow .qtybox button{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:18px;line-height:1}
+.crow .camt{font-weight:700;font-variant-numeric:tabular-nums;text-align:right;align-self:center}
+.crow .xbtn{border:0;background:transparent;color:var(--bad);font-size:13px;font-weight:600}
+.thumb{width:44px;height:44px;border-radius:9px;object-fit:cover;background:var(--brand-soft);flex:none;cursor:zoom-in;border:1px solid var(--line)}
+.thumb.sm{width:36px;height:36px;cursor:inherit}
+.thumb.big{width:84px;height:84px;cursor:default;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);text-align:center;overflow:hidden}
+.thumb.big img{width:100%;height:100%;object-fit:cover}
+.mname{display:flex;gap:10px;align-items:center;min-width:0}
+.pbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.photorow{display:flex;gap:12px;align-items:center}
+.scanvid{width:100%;max-height:260px;border-radius:12px;background:#000;object-fit:cover;margin-top:8px}
+.searchrow{display:flex;gap:8px}
+.searchrow input{flex:1}
+label.btn,a.btn{display:inline-block;cursor:pointer;text-decoration:none;color:inherit}
+a.btn.primary{color:var(--brand-ink)}
+.pline{padding:12px 0;border-top:1px solid var(--line)}
+.pline .fgrid{margin-top:8px}
+.pline .head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.tline{display:flex;justify-content:space-between;padding:3px 0;font-variant-numeric:tabular-nums}
+.tline.big{font-size:20px;font-weight:700;border-top:1px solid var(--line);margin-top:6px;padding-top:10px;font-family:"Bricolage Grotesque",Figtree,sans-serif}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;margin-bottom:12px}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:9px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--brand-soft);color:var(--brand)}
+#modalRoot{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+#modalRoot[hidden]{display:none}
+.scrim{position:absolute;inset:0;background:rgba(8,20,20,.55)}
+.modal{position:relative;background:var(--surface);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.modal.small{max-width:420px}
+.modal h2{margin-bottom:14px}
+.actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+@media (min-width:720px){#modalRoot{align-items:center;padding:20px}.modal{border-radius:18px;max-height:90%}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.toast[hidden]{display:none}
+@media (min-width:720px){.toast{bottom:24px}}
+.recept-wrap{background:#E9EEEA;border-radius:12px;padding:12px;margin-bottom:4px}
+.badge-cancel{display:inline-block;background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:3px 10px;font-weight:700;margin-bottom:10px}
+@media (prefers-reduced-motion: no-preference){.modal{animation:rise .18s ease-out}@keyframes rise{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}}
+@media print{
+  html,body{background:#fff!important}
+  :root{padding:0!important}
+  .app,.toast,.scrim,.no-print{display:none!important}
+  #modalRoot{position:static;display:block;padding:0}
+  .modal{position:static;box-shadow:none;max-height:none;overflow:visible;padding:0;max-width:none;border-radius:0;background:#fff;animation:none}
+  .recept-wrap{background:#fff;padding:0}
+}
+.photomenu{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.photomenu[hidden]{display:none}
+.photomenu .btn{flex:1 1 150px;text-align:center;padding:12px 10px}
+
+</style>
+<style id="rcss"></style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand" id="shopName">Medicine panel</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn sm" onclick="openSettings()">Shop settings</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+  <main id="view"></main>
+</div>
+<div id="modalRoot" hidden></div>
+<div id="h5q_holder" style="display:none"></div>
+<div class="toast" id="toast" hidden role="status"></div>
+<script>
+/* Medicine Panel - offline data layer.
+   Replaces api.php, db.php, lib.php and actions.php.
+   Data is kept on the phone (IndexedDB, with localStorage as a fallback). */
+(function () {
+  'use strict';
+
+  class ApiError extends Error {}
+
+  var CURRENCIES = ['INR', 'PKR', 'BDT', 'NPR', 'LKR', 'USD', 'EUR', 'GBP', 'AED', 'SAR'];
+  var TABLES = ['medicines', 'stock_log', 'sales', 'sale_items', 'purchases', 'purchase_items'];
+
+  var db = emptyDb();
+  var photos = {};          // medicine id -> data URI
+  var mode = 'memory';      // 'idb' | 'local' | 'memory'
+  var idb = null;
+  var dirty = {};           // photo ids changed in the current action
+  var fullRewrite = false;  // true after erase / restore
+
+  function emptyDb() {
+    var d = { seq: {}, settings: {} };
+    TABLES.forEach(function (t) { d[t] = []; d.seq[t] = 0; });
+    return d;
+  }
+
+  /* ---------------- Storage ---------------- */
+  function reqP(r) {
+    return new Promise(function (res, rej) { r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; });
+  }
+  function idbOpen() {
+    return new Promise(function (res, rej) {
+      if (!window.indexedDB) return rej(new Error('IndexedDB not available'));
+      var r = indexedDB.open('medicine-panel', 1);
+      r.onupgradeneeded = function () { var d = r.result; d.createObjectStore('kv'); d.createObjectStore('photos'); };
+      r.onsuccess = function () { res(r.result); };
+      r.onerror = function () { rej(r.error); };
+      r.onblocked = function () { rej(new Error('IndexedDB blocked')); };
+    });
+  }
+  async function idbLoad() {
+    var tx = idb.transaction(['kv', 'photos'], 'readonly');
+    var a = reqP(tx.objectStore('kv').get('db'));
+    var k = reqP(tx.objectStore('photos').getAllKeys());
+    var v = reqP(tx.objectStore('photos').getAll());
+    var d = await a, keys = await k, vals = await v;
+    var p = {};
+    for (var i = 0; i < keys.length; i++) p[keys[i]] = vals[i];
+    return d ? { db: d, photos: p } : null;
+  }
+  function idbSave() {
+    return new Promise(function (res, rej) {
+      var tx = idb.transaction(['kv', 'photos'], 'readwrite');
+      tx.objectStore('kv').put(db, 'db');
+      var ps = tx.objectStore('photos');
+      if (fullRewrite) {
+        ps.clear();
+        Object.keys(photos).forEach(function (k) { ps.put(photos[k], k); });
+      } else {
+        Object.keys(dirty).forEach(function (k) { if (photos[k]) ps.put(photos[k], k); else ps.delete(k); });
+      }
+      tx.oncomplete = function () { res(); };
+      tx.onerror = function () { rej(tx.error); };
+      tx.onabort = function () { rej(tx.error || new Error('aborted')); };
+    });
+  }
+  var LS_KEY = 'medicine-panel-data';
+  function lsAvailable() {
+    try { localStorage.setItem('mp_probe', '1'); localStorage.removeItem('mp_probe'); return true; } catch (e) { return false; }
+  }
+  function lsLoad() {
+    try { var t = localStorage.getItem(LS_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; }
+  }
+  async function persist() {
+    try {
+      if (mode === 'idb') await idbSave();
+      else if (mode === 'local') localStorage.setItem(LS_KEY, JSON.stringify({ db: db, photos: photos }));
+    } catch (e) {
+      throw new ApiError('Could not save on this phone. Storage may be full or blocked.');
+    }
+    dirty = {};
+    fullRewrite = false;
+  }
+
+  async function init() {
+    var loaded = null;
+    try {
+      idb = await idbOpen();
+      mode = 'idb';
+      loaded = await idbLoad();
+    } catch (e) {
+      idb = null;
+      if (lsAvailable()) { mode = 'local'; loaded = lsLoad(); }
+      else { mode = 'memory'; }
+    }
+    if (loaded && loaded.db) {
+      db = normalizeDb(loaded.db);
+      photos = loaded.photos || {};
+    }
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  }
+
+  function normalizeDb(d) {
+    var n = emptyDb();
+    n.settings = (d.settings && typeof d.settings === 'object') ? d.settings : {};
+    TABLES.forEach(function (t) {
+      n[t] = Array.isArray(d[t]) ? d[t] : [];
+      var max = 0;
+      n[t].forEach(function (r) { if (r && r.id > max) max = r.id; });
+      n.seq[t] = Math.max(max, (d.seq && d.seq[t]) || 0);
+    });
+    return n;
+  }
+
+  /* ---------------- Helpers (lib.php) ---------------- */
+  function pad(n, w) { return String(n).padStart(w || 2, '0'); }
+  function nowIso() {
+    var d = new Date();
+    var off = -d.getTimezoneOffset(), a = Math.abs(off);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) +
+      (off >= 0 ? '+' : '-') + pad(Math.floor(a / 60)) + ':' + pad(a % 60);
+  }
+  function cleanStr(v, max) {
+    if (typeof v === 'number' && isFinite(v)) v = String(v);
+    if (typeof v !== 'string') return '';
+    v = v.trim();
+    var a = Array.from(v);
+    return a.length > max ? a.slice(0, max).join('') : v;
+  }
+  function toFloat(v) {
+    var n = typeof v === 'number' ? v : ((typeof v === 'string' && v.trim() !== '') ? Number(v) : NaN);
+    return isFinite(n) ? n : 0;
+  }
+  function toInt(v) { return Math.trunc(toFloat(v)); }
+  function isValidYm(v) { return typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v); }
+  function isExpired(ym) {
+    if (!ym || !isValidYm(ym)) return false;
+    var y = parseInt(ym.slice(0, 4), 10), m = parseInt(ym.slice(5, 7), 10);
+    return new Date(y, m, 0, 23, 59, 59).getTime() < Date.now();
+  }
+  function validPhoto(p) {
+    if (typeof p !== 'string' || p.length > 400000) return false;
+    var m = /^data:image\/(jpeg|png|webp);base64,/.exec(p);
+    if (!m) return false;
+    var b = p.slice(m[0].length);
+    if (!b) return false;
+    try { return atob(b).length > 0; } catch (e) { return false; }
+  }
+  function round2(x) { return Math.round(x * 100) / 100; }
+
+  function getSetting(k, def) { var v = db.settings[k]; return (v === undefined || v === null) ? def : v; }
+  function shopInfo() {
+    var cur = getSetting('shop_currency', 'INR');
+    if (CURRENCIES.indexOf(cur) < 0) cur = 'INR';
+    return {
+      name: getSetting('shop_name', 'My Medical Store'),
+      currency: cur,
+      address: getSetting('shop_address', ''),
+      phone: getSetting('shop_phone', ''),
+      dl: getSetting('shop_dl', '')
+    };
+  }
+  function insert(table, row) { row.id = ++db.seq[table]; db[table].push(row); return row; }
+  function getMed(id) {
+    id = toInt(id);
+    for (var i = 0; i < db.medicines.length; i++) if (db.medicines[i].id === id) return db.medicines[i];
+    return null;
+  }
+  function logTxn(type, med, qty, note) {
+    insert('stock_log', { date: nowIso(), type: type, med_id: med.id, name: med.name, batch: med.batch, qty: qty, note: note });
+  }
+  function padNo(prefix, id) { return prefix + pad(id, 4); }
+
+  function buildState() {
+    var meds = db.medicines.slice().sort(function (a, b) {
+      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    }).map(function (r) {
+      return {
+        id: String(r.id), name: r.name, salt: r.salt, company: r.company, batch: r.batch, expiry: r.expiry,
+        rack: r.rack, buy: +r.buy, mrp: +r.mrp, qty: r.qty | 0, min: r.min_qty | 0, barcode: r.barcode,
+        photo: photos[r.id] || ''
+      };
+    });
+    var txns = db.stock_log.slice().reverse().slice(0, 3000).map(function (r) {
+      return { id: String(r.id), date: r.date, type: r.type, medId: String(r.med_id), name: r.name, batch: r.batch, qty: r.qty | 0, note: r.note };
+    });
+    var medById = {};
+    db.medicines.forEach(function (m) { medById[m.id] = m; });
+    var saleItems = {};
+    db.sale_items.forEach(function (it) {
+      // Older bills did not save the buying price; use the medicine's current buying price for those.
+      var hasBuy = it.buy !== undefined && it.buy !== null;
+      var cur = medById[it.med_id];
+      (saleItems[it.sale_id] = saleItems[it.sale_id] || []).push({
+        medId: String(it.med_id), name: it.name, batch: it.batch, expiry: it.expiry, qty: it.qty | 0,
+        buy: hasBuy ? +it.buy : (cur ? +cur.buy : 0), est: !hasBuy, mrp: +it.mrp, amount: +it.amount
+      });
+    });
+    var bills = db.sales.slice().reverse().map(function (s) {
+      return {
+        id: String(s.id), no: s.bill_no, date: s.date, customer: s.customer, phone: s.phone,
+        items: saleItems[s.id] || [], sub: +s.sub, disc: 0, discAmt: 0, gst: 0, gstAmt: 0,
+        round: +s.round_off, total: +s.total, shop: s.shop || {}, cancelled: !!s.cancelled
+      };
+    });
+    var purItems = {};
+    db.purchase_items.forEach(function (it) {
+      (purItems[it.purchase_id] = purItems[it.purchase_id] || []).push({
+        medId: String(it.med_id), name: it.name, batch: it.batch, expiry: it.expiry, qty: it.qty | 0, buy: +it.buy, mrp: +it.mrp, amount: +it.amount
+      });
+    });
+    var purchases = db.purchases.slice().reverse().map(function (p) {
+      return {
+        id: String(p.id), no: p.bill_no, date: p.date, supplier: p.supplier, phone: p.phone, inv: p.inv,
+        items: purItems[p.id] || [], total: +p.total, shop: p.shop || {}, cancelled: !!p.cancelled
+      };
+    });
+    return { shop: shopInfo(), meds: meds, txns: txns, bills: bills, purchases: purchases };
+  }
+
+  /* ---------------- Actions (actions.php) ---------------- */
+  function newMedRow(f) {
+    return insert('medicines', {
+      name: f.name, salt: f.salt, company: f.company, batch: f.batch, expiry: f.expiry, rack: f.rack,
+      buy: f.buy, mrp: f.mrp, qty: f.qty, min_qty: f.min_qty, barcode: f.barcode, photo_v: f.photo_v || 0, created_at: nowIso()
+    });
+  }
+
+  function actMedSave(d) {
+    var name = cleanStr(d.name, 200);
+    var mrp = toFloat(d.mrp);
+    if (name === '') throw new ApiError('Enter the medicine name');
+    if (mrp <= 0) throw new ApiError('Enter the MRP');
+    var expiry = isValidYm(d.expiry) ? d.expiry : '';
+    var salt = cleanStr(d.salt, 200), company = cleanStr(d.company, 120), rack = cleanStr(d.rack, 60);
+    var batch = cleanStr(d.batch, 60), barcode = cleanStr(d.barcode, 120);
+    var buy = Math.max(0, toFloat(d.buy));
+    var qty = Math.max(0, toInt(d.qty));
+    var min = Math.max(0, toInt(d.min));
+    var photo = d.photo === undefined ? 'keep' : d.photo;
+    var forIn = !!d.forIn;
+    var id = toInt(d.id);
+
+    var photoData = null; // null = keep what is stored
+    if (photo === '') photoData = '';
+    else if (photo !== 'keep') {
+      if (!validPhoto(photo)) throw new ApiError('This picture could not be saved. Try a different one.');
+      photoData = photo;
+    }
+
+    if (id > 0) {
+      var old = getMed(id);
+      if (!old) throw new ApiError('Medicine not found');
+      var oldQty = old.qty;
+      old.name = name; old.salt = salt; old.company = company; old.batch = batch; old.expiry = expiry;
+      old.rack = rack; old.buy = buy; old.mrp = mrp; old.qty = qty; old.min_qty = min; old.barcode = barcode;
+      if (photoData !== null) {
+        if (photoData) photos[id] = photoData; else delete photos[id];
+        dirty[id] = true;
+        old.photo_v = Math.floor(Date.now() / 1000);
+      }
+      var diff = qty - oldQty;
+      if (diff !== 0) logTxn(diff > 0 ? 'IN' : 'OUT', old, Math.abs(diff), 'Manual correction');
+      return { id: String(id) };
+    }
+
+    if (forIn) qty = 0; // stock is added by the stock in bill
+    var m = newMedRow({ name: name, salt: salt, company: company, batch: batch, expiry: expiry, rack: rack, buy: buy, mrp: mrp, qty: qty, min_qty: min, barcode: barcode, photo_v: Math.floor(Date.now() / 1000) });
+    if (photoData) { photos[m.id] = photoData; dirty[m.id] = true; }
+    if (qty > 0) {
+      var pid = makeSinglePurchase(m, qty, buy, mrp);
+      return { id: String(m.id), purchaseId: String(pid) };
+    }
+    return { id: String(m.id) };
+  }
+
+  // Creates a stock in bill (PUR-0001...) for one medicine. Stock is already in the medicine row.
+  function makeSinglePurchase(m, q, buy, mrp) {
+    var amount = round2(buy * q);
+    var p = insert('purchases', { bill_no: '', date: nowIso(), supplier: '', phone: '', inv: '', total: amount, cancelled: 0, shop: shopInfo() });
+    p.bill_no = padNo('PUR-', p.id);
+    insert('purchase_items', { purchase_id: p.id, med_id: m.id, name: m.name, batch: m.batch, expiry: m.expiry, qty: q, buy: +buy, mrp: +mrp, amount: amount });
+    logTxn('IN', m, q, p.bill_no);
+    return p.id;
+  }
+
+  function actMedDelete(d) {
+    var id = toInt(d.id);
+    db.medicines = db.medicines.filter(function (m) { return m.id !== id; });
+    if (photos[id]) { delete photos[id]; dirty[id] = true; }
+    return {};
+  }
+
+  function actSample() {
+    function ym(n) { var t = new Date(new Date().getFullYear(), new Date().getMonth() + n, 1); return t.getFullYear() + '-' + pad(t.getMonth() + 1); }
+    var list = [
+      ['Paracetamol 500 mg (10 tabs)', 'Paracetamol', 'Sample Pharma', 'PC2401', ym(14), 'A1', 12, 20, 120, 20],
+      ['Amoxicillin 500 mg (10 caps)', 'Amoxicillin', 'Sample Labs', 'AM8812', ym(9), 'A3', 55, 85, 8, 10],
+      ['Cetirizine 10 mg (10 tabs)', 'Cetirizine', 'Sample Pharma', 'CT1190', ym(2), 'B2', 14, 28, 40, 15],
+      ['Pantoprazole 40 mg (15 tabs)', 'Pantoprazole', 'Sample Labs', 'PN5521', ym(18), 'B4', 70, 130, 60, 15],
+      ['ORS sachet', 'Oral rehydration salts', 'Sample Health', 'OR3307', ym(20), 'C1', 9, 22, 200, 40],
+      ['Cough syrup 100 ml', 'Dextromethorphan', 'Sample Health', 'CS7745', ym(6), 'C3', 48, 95, 0, 10]
+    ];
+    list.forEach(function (x) {
+      var m = newMedRow({ name: x[0], salt: x[1], company: x[2], batch: x[3], expiry: x[4], rack: x[5], buy: x[6], mrp: x[7], qty: x[8], min_qty: x[9], barcode: '' });
+      if (x[8] > 0) logTxn('IN', m, x[8], 'Opening stock');
+    });
+    return {};
+  }
+
+  function actSaleCreate(d) {
+    var items = Array.isArray(d.items) ? d.items : [];
+    var want = {}, order = [];
+    items.forEach(function (it) {
+      if (!it || typeof it !== 'object') return;
+      var mid = toInt(it.medId), q = toInt(it.qty);
+      if (mid > 0 && q > 0) {
+        if (!(mid in want)) { want[mid] = 0; order.push(mid); }
+        want[mid] += q;
+      }
+    });
+    if (order.length === 0) throw new ApiError('Add at least one medicine');
+
+    var lines = [], sub = 0;
+    order.forEach(function (mid) {
+      var q = want[mid], m = getMed(mid);
+      if (!m) throw new ApiError('A medicine in this bill no longer exists');
+      if (isExpired(m.expiry)) throw new ApiError(m.name + ' is expired. Remove it from the bill.');
+      if (q > m.qty) throw new ApiError(m.name + ': only ' + m.qty + ' in stock');
+      var amount = round2(m.mrp * q);
+      sub += amount;
+      lines.push([m, q, amount]);
+    });
+    sub = round2(sub);
+    var total = Math.round(sub);
+    var roundOff = round2(total - sub);
+    var customer = cleanStr(d.customer, 120), phone = cleanStr(d.phone, 40);
+
+    var s = insert('sales', { bill_no: '', date: nowIso(), customer: customer, phone: phone, sub: sub, round_off: roundOff, total: total, cancelled: 0, shop: shopInfo() });
+    s.bill_no = padNo('INV-', s.id);
+    lines.forEach(function (ln) {
+      var m = ln[0], q = ln[1];
+      insert('sale_items', { sale_id: s.id, med_id: m.id, name: m.name, batch: m.batch, expiry: m.expiry, qty: q, buy: +m.buy, mrp: +m.mrp, amount: ln[2] });
+      m.qty -= q;
+      logTxn('OUT', m, q, s.bill_no + (customer !== '' ? ' \u2013 ' + customer : ''));
+    });
+    return { id: String(s.id) };
+  }
+
+  function actSaleCancel(d) {
+    var sid = toInt(d.id);
+    var s = db.sales.filter(function (x) { return x.id === sid; })[0];
+    if (!s) throw new ApiError('Bill not found');
+    if (s.cancelled) throw new ApiError('This bill is already cancelled');
+    db.sale_items.filter(function (it) { return it.sale_id === sid; }).forEach(function (it) {
+      var m = getMed(it.med_id);
+      if (m) {
+        m.qty += it.qty;
+        logTxn('IN', m, it.qty, 'Returned: ' + s.bill_no + ' cancelled');
+      }
+    });
+    s.cancelled = 1;
+    return { id: String(sid) };
+  }
+
+  function actPurchaseCreate(d) {
+    var lines = Array.isArray(d.lines) ? d.lines : [];
+    if (lines.length === 0) throw new ApiError('Add at least one medicine');
+    var supplier = cleanStr(d.supplier, 120), phone = cleanStr(d.phone, 40), inv = cleanStr(d.inv, 60);
+
+    lines.forEach(function (l) {
+      if (!l || typeof l !== 'object') throw new ApiError('Invalid bill');
+      var m = getMed(l.medId);
+      if (!m) throw new ApiError('A medicine in this bill no longer exists');
+      if (toInt(l.qty) <= 0) throw new ApiError(m.name + ': enter the quantity received');
+      if (toFloat(l.mrp) <= 0) throw new ApiError(m.name + ': enter the MRP');
+    });
+
+    var p = insert('purchases', { bill_no: '', date: nowIso(), supplier: supplier, phone: phone, inv: inv, total: 0, cancelled: 0, shop: shopInfo() });
+    var no = padNo('PUR-', p.id);
+    var total = 0;
+    lines.forEach(function (l) {
+      var m = getMed(l.medId);
+      var q = toInt(l.qty);
+      var batch = cleanStr(l.batch, 60);
+      var exp = isValidYm(l.expiry) ? l.expiry : '';
+      var buy = Math.max(0, toFloat(l.buy));
+      var mrp = toFloat(l.mrp);
+      var target;
+      if (batch !== '' && m.batch !== '' && batch.toLowerCase() !== m.batch.toLowerCase()) {
+        // A different batch: keep it as its own stock line
+        target = newMedRow({
+          name: m.name, salt: m.salt, company: m.company, batch: batch, expiry: (exp !== '' ? exp : m.expiry), rack: m.rack,
+          buy: (buy > 0 ? buy : +m.buy), mrp: mrp, qty: q, min_qty: m.min_qty, barcode: m.barcode, photo_v: m.photo_v
+        });
+        if (photos[m.id]) { photos[target.id] = photos[m.id]; dirty[target.id] = true; }
+      } else {
+        m.qty += q;
+        m.batch = (batch !== '' ? batch : m.batch);
+        m.expiry = (exp !== '' ? exp : m.expiry);
+        m.buy = (buy > 0 ? buy : +m.buy);
+        m.mrp = mrp;
+        target = m;
+      }
+      var amount = round2(buy * q);
+      total += amount;
+      insert('purchase_items', { purchase_id: p.id, med_id: target.id, name: target.name, batch: target.batch, expiry: target.expiry, qty: q, buy: buy, mrp: mrp, amount: amount });
+      logTxn('IN', target, q, no + (supplier !== '' ? ' \u2013 ' + supplier : ''));
+    });
+    p.bill_no = no;
+    p.total = round2(total);
+    return { id: String(p.id) };
+  }
+
+  function actPurchaseCancel(d) {
+    var pid = toInt(d.id);
+    var p = db.purchases.filter(function (x) { return x.id === pid; })[0];
+    if (!p) throw new ApiError('Bill not found');
+    if (p.cancelled) throw new ApiError('This bill is already cancelled');
+    var items = db.purchase_items.filter(function (it) { return it.purchase_id === pid; });
+    items.forEach(function (it) {
+      var m = getMed(it.med_id);
+      if (!m || m.qty < it.qty) throw new ApiError('Cannot cancel: some of ' + it.name + ' is already sold or removed.');
+    });
+    items.forEach(function (it) {
+      var m = getMed(it.med_id);
+      m.qty -= it.qty;
+      logTxn('OUT', m, it.qty, p.bill_no + ' cancelled');
+    });
+    p.cancelled = 1;
+    return { id: String(pid) };
+  }
+
+  function actSettingsSave(d) {
+    var name = cleanStr(d.name, 120);
+    if (name === '') name = 'My Medical Store';
+    db.settings.shop_name = name;
+    db.settings.shop_address = cleanStr(d.address, 250);
+    db.settings.shop_phone = cleanStr(d.phone, 40);
+    db.settings.shop_dl = cleanStr(d.dl, 80);
+    var cur = cleanStr(d.currency === undefined ? 'INR' : d.currency, 3).toUpperCase();
+    if (CURRENCIES.indexOf(cur) < 0) cur = 'INR';
+    db.settings.shop_currency = cur;
+    return {};
+  }
+
+  function actErase() {
+    TABLES.forEach(function (t) { db[t] = []; db.seq[t] = 0; });
+    photos = {};
+    fullRewrite = true;
+    return {};
+  }
+
+  var ACTIONS = {
+    med_save: actMedSave, med_delete: actMedDelete, sample: actSample,
+    sale_create: actSaleCreate, sale_cancel: actSaleCancel,
+    purchase_create: actPurchaseCreate, purchase_cancel: actPurchaseCancel,
+    settings_save: actSettingsSave, erase: actErase
+  };
+
+  /* ---------------- Public API ---------------- */
+  async function transact(fn) {
+    var snap = JSON.stringify(db), pSnap = Object.assign({}, photos);
+    dirty = {};
+    fullRewrite = false;
+    try {
+      var res = fn();
+      await persist();
+      return res;
+    } catch (e) {
+      db = JSON.parse(snap);
+      photos = pSnap;
+      dirty = {};
+      fullRewrite = false;
+      throw e;
+    }
+  }
+
+  async function call(action, data) {
+    try {
+      var fn = ACTIONS[action];
+      if (!fn) throw new ApiError('Unknown action.');
+      var res = await transact(function () { return fn(data || {}); });
+      res.ok = true;
+      res.state = buildState();
+      return res;
+    } catch (e) {
+      if (e instanceof ApiError) return { ok: false, error: e.message };
+      return { ok: false, error: 'Error: ' + (e && e.message ? e.message : e) };
+    }
+  }
+
+  function exportJSON() {
+    return JSON.stringify({ app: 'medicine-panel', version: 1, exported: nowIso(), db: db, photos: photos });
+  }
+
+  async function restore(text) {
+    var obj;
+    try { obj = JSON.parse(text); } catch (e) { return { ok: false, error: 'This is not a valid backup file.' }; }
+    if (!obj || obj.app !== 'medicine-panel' || !obj.db || !Array.isArray(obj.db.medicines)) {
+      return { ok: false, error: 'This is not a Medicine Panel backup file.' };
+    }
+    try {
+      await transact(function () {
+        db = normalizeDb(obj.db);
+        photos = (obj.photos && typeof obj.photos === 'object') ? obj.photos : {};
+        fullRewrite = true;
+      });
+      return { ok: true, state: buildState() };
+    } catch (e) {
+      return { ok: false, error: e && e.message ? e.message : 'Could not restore the backup.' };
+    }
+  }
+
+  window.LocalDB = {
+    init: init,
+    call: call,
+    buildState: buildState,
+    exportJSON: exportJSON,
+    restore: restore,
+    get mode() { return mode; }
+  };
+})();
+
+</script>
+<script type="text/plain" id="appjs">
+/* Medicine Panel - front end. Data lives on this phone (see localdb.js). */
+let S = window.APP.state;
+
+/* ---------- Receipt styling (shared by screen + downloaded bill) ---------- */
+const RECEIPT_CSS = `
+.receipt{background:#fff;color:#1a1a1a;font-family:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.4;padding:18px 16px 22px;max-width:420px;margin:0 auto;border-radius:6px}
+.receipt h2{margin:0 0 2px;font-size:19px;text-align:center;font-family:"Bricolage Grotesque",Figtree,sans-serif;color:#111}
+.receipt .c{text-align:center;color:#555;font-size:12px}
+.receipt hr{border:0;border-top:1px dashed #9a9a9a;margin:10px 0}
+.receipt table{width:100%;border-collapse:collapse}
+.receipt th{font-weight:600;text-align:left;font-size:12px;padding:4px 0;border-bottom:1px solid #bbb;color:#333}
+.receipt td{padding:6px 0;vertical-align:top;border-bottom:1px dotted #d6d6d6}
+.receipt .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;padding-left:6px}
+.receipt .s{color:#666;font-size:11px}
+.receipt .tot td{border:0;padding:2px 0}
+.receipt .grand td{font-weight:700;font-size:16px;border-top:1px solid #1a1a1a;padding-top:6px}
+.receipt .meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px}
+.receipt .foot{text-align:center;color:#555;font-size:12px;margin-top:10px}
+.receipt .void{color:#b42318;font-weight:700;text-align:center;border:1px solid #b42318;border-radius:4px;padding:2px;margin-bottom:8px}
+`;
+document.getElementById('rcss').textContent = RECEIPT_CSS;
+
+/* ---------- Helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const int = v => { const n = parseInt(v, 10); return isFinite(n) ? n : 0; };
+const CURRENCIES = {
+  INR: {sym: '₹', name: 'Indian Rupee (₹)', loc: 'en-IN'},
+  PKR: {sym: 'Rs ', name: 'Pakistani Rupee (Rs)', loc: 'en-IN'},
+  BDT: {sym: '৳', name: 'Bangladeshi Taka (৳)', loc: 'en-IN'},
+  NPR: {sym: 'Rs ', name: 'Nepalese Rupee (Rs)', loc: 'en-IN'},
+  LKR: {sym: 'Rs ', name: 'Sri Lankan Rupee (Rs)', loc: 'en-IN'},
+  USD: {sym: '$', name: 'US Dollar ($)', loc: 'en-US'},
+  EUR: {sym: '€', name: 'Euro (€)', loc: 'en-US'},
+  GBP: {sym: '£', name: 'British Pound (£)', loc: 'en-GB'},
+  AED: {sym: 'AED ', name: 'UAE Dirham (AED)', loc: 'en-US'},
+  SAR: {sym: 'SAR ', name: 'Saudi Riyal (SAR)', loc: 'en-US'}
+};
+const money = n => {
+  const c = CURRENCIES[S.shop && S.shop.currency] || CURRENCIES.INR;
+  return c.sym + (Number(n) || 0).toLocaleString(c.loc, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+};
+const sum = (a, f) => a.reduce((t, x) => t + f(x), 0);
+const fmtDT = iso => new Date(iso).toLocaleString('en-IN', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+const fmtYM = ym => { if (!ym) return '—'; const p = ym.split('-'); return p[1] + '/' + p[0]; };
+const sameDay = iso => new Date(iso).toDateString() === new Date().toDateString();
+const sameMonth = iso => { const a = new Date(iso), b = new Date(); return a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear(); };
+const byName = (a, b) => a.name.localeCompare(b.name);
+const med = id => S.meds.find(m => m.id === id);
+const val = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+
+function expStatus(ym) {
+  if (!ym) return {cls: '', days: null, tag: ''};
+  const p = ym.split('-').map(Number);
+  const end = new Date(p[0], p[1], 0, 23, 59, 59);
+  const days = Math.floor((end - new Date()) / 864e5);
+  if (days < 0) return {cls: 'bad', days, tag: 'Expired'};
+  if (days <= 90) return {cls: 'warn', days, tag: 'Expiring soon'};
+  return {cls: '', days, tag: ''};
+}
+
+/* ---------- Data ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+}
+/* ---------- Modal ---------- */
+function openModal(html, cls) {
+  const r = $('#modalRoot');
+  r.innerHTML = `<div class="scrim" onclick="closeModal()"></div><div class="modal ${cls || ''}" role="dialog" aria-modal="true">${html}</div>`;
+  r.hidden = false;
+  document.body.classList.add('noscroll');
+  const a = r.querySelector('[data-autofocus]');
+  if (a) setTimeout(() => a.focus(), 30);
+}
+function closeModal() {
+  stopScan();
+  if (typeof stopPhotoCam === 'function') stopPhotoCam();
+  if (typeof stopCodeCam === 'function') stopCodeCam();
+  const r = $('#modalRoot');
+  r.innerHTML = ''; r.hidden = true;
+  document.body.classList.remove('noscroll');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+let confirmCb = null;
+function confirmBox(msg, label, cb) {
+  confirmCb = cb;
+  openModal(`<h2>${esc(msg)}</h2><div class="actions"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn danger" onclick="runConfirm()">${esc(label)}</button></div>`, 'small');
+}
+function runConfirm() { const f = confirmCb; confirmCb = null; closeModal(); if (f) f(); }
+
+/* ---------- Navigation ---------- */
+let tab = 'home', histTab = 'out', stockQ = '', stockF = 'all', inSel = '', billQ = '', histQ = '', inQ = '', medFormForIn = false;
+let cart = [], cust = {name: '', phone: ''}, disc = 0, gst = 0;
+let inCart = [], sup = {name: '', phone: '', inv: ''};
+const TABS = [['home', 'Home'], ['stock', 'Stock'], ['in', 'Stock in'], ['out', 'Stock out'], ['hist', 'History'], ['profit', 'Profit']];
+function go(t) { tab = t; render(); window.scrollTo(0, 0); }
+function render() {
+  $('#shopName').textContent = S.shop.name || 'Medicine panel';
+  document.title = (S.shop.name || 'Medicine') + ' – panel';
+  $('#tabs').innerHTML = TABS.map(t => `<button class="tab ${t[0] === tab ? 'on' : ''}" onclick="go('${t[0]}')" ${t[0] === tab ? 'aria-current="page"' : ''}>${t[1]}</button>`).join('');
+  ({home: viewHome, stock: viewStock, 'in': viewIn, out: viewOut, hist: viewHist, profit: viewProfit})[tab]();
+}
+
+/* ---------- Home ---------- */
+function viewHome() {
+  const m = S.meds;
+  const low = m.filter(x => x.qty <= x.min).sort(byName);
+  const exp = m.filter(x => { const s = expStatus(x.expiry); return s.days !== null && s.days <= 90 && x.qty > 0; }).sort((a, b) => (a.expiry || '').localeCompare(b.expiry || ''));
+  const outToday = S.txns.filter(t => t.type === 'OUT' && sameDay(t.date));
+  const empty = m.length === 0;
+  let h = `<div class="bar"><h1>Today</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="go('in')">Stock in</button><button class="btn primary" onclick="go('out')">Stock out (bill)</button></div></div>`;
+  if (empty) {
+    h += `<div class="panel empty"><h3>No medicines yet</h3><div>Add your medicines once, then use Stock in to receive new stock and Stock out to sell with a bill.</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary" onclick="medForm()">Add first medicine</button><button class="btn" onclick="loadSample()">Try with sample medicines</button></div></div>`;
+  } else {
+    h += `<div class="panel stats">
+      <div class="stat"><b>${sum(outToday, t => t.qty)}</b><span>Units out today</span></div>
+      <div class="stat"><b>${m.length}</b><span>Medicines listed</span></div>
+      <div class="stat"><b>${sum(m, x => x.qty)}</b><span>Units in stock</span></div>
+      <div class="stat"><b>${money(sum(m, x => x.qty * x.buy))}</b><span>Stock value at cost</span></div>
+      <div class="stat ${todayProfit().profit < 0 ? 'alert' : 'good'}"><b>${money(todayProfit().profit)}</b><span>${todayProfit().profit < 0 ? 'Loss today' : 'Profit today'}</span></div>
+      <div class="stat ${low.length ? 'alert' : ''}"><b>${low.length}</b><span>Low or out of stock</span></div>
+      <div class="stat ${exp.length ? 'caution' : ''}"><b>${exp.length}</b><span>Expired or expiring in 90 days</span></div>
+    </div>
+    <div class="two" style="margin-top:14px">
+      <section class="panel"><div class="pad" style="padding-bottom:8px"><h2>Needs restocking</h2></div><div class="list">${
+        low.length ? low.slice(0, 8).map(x => `<div class="row"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Alert at ${x.min}</div></div><span class="pill ${x.qty === 0 ? 'bad' : 'warn'}">${x.qty === 0 ? 'Out' : x.qty + ' left'}</span><button class="btn sm" onclick="goIn('${x.id}')">Restock</button></div>`).join('') : `<div class="empty">Every medicine is above its alert level.</div>`
+      }</div></section>
+      <section class="panel"><div class="pad" style="padding-bottom:8px"><h2>Expiry watch</h2></div><div class="list">${
+        exp.length ? exp.slice(0, 8).map(x => { const s = expStatus(x.expiry); return `<div class="row"><div class="grow"><b>${esc(x.name)}</b><div class="sub">Batch ${esc(x.batch || '—')}, ${x.qty} units</div></div><span class="pill ${s.cls}">${s.tag} ${fmtYM(x.expiry)}</span></div>`; }).join('') : `<div class="empty">Nothing expires in the next 90 days.</div>`
+      }</div></section>
+    </div>
+    <section class="panel" style="margin-top:14px"><div class="pad" style="padding-bottom:8px"><h2>Recent movement</h2></div><div class="list">${
+      S.txns.length ? S.txns.slice(0, 6).map(txnRow).join('') : `<div class="empty">Stock in and out will show up here.</div>`
+    }</div></section>`;
+  }
+  $('#view').innerHTML = h;
+}
+function txnRow(t) {
+  return `<div class="row"><span class="pill ${t.type === 'IN' ? 'in' : 'out'}">${t.type === 'IN' ? 'In' : 'Out'} ${t.qty}</span><div class="grow"><b>${esc(t.name)}</b><div class="sub"><span>${fmtDT(t.date)}</span>${t.batch ? `<span>Batch ${esc(t.batch)}</span>` : ''}${t.note ? `<span>${esc(t.note)}</span>` : ''}</div></div></div>`;
+}
+
+/* ---------- Stock ---------- */
+function viewStock() {
+  const chips = [['all', 'All'], ['low', 'Low stock'], ['out', 'Out of stock'], ['exp', 'Expiry']]
+    .map(c => `<button class="chip ${stockF === c[0] ? 'on' : ''}" onclick="stockF='${c[0]}';viewStock()">${c[1]}</button>`).join('');
+  $('#view').innerHTML = `<div class="bar"><h1>Stock</h1><button class="btn primary" onclick="medForm()">Add medicine</button></div>
+    <div class="panel pad" style="margin-bottom:12px"><div class="searchrow"><input id="sq" type="search" placeholder="Search name, salt, company, batch, rack or code" value="${esc(stockQ)}" oninput="stockQ=this.value;listStock()" autocomplete="off"><button class="btn" onclick="scanFor('stock')">Scan</button></div><div class="chips">${chips}</div></div>
+    <div class="panel" id="stockList"></div>`;
+  listStock();
+}
+function listStock() {
+  const q = stockQ.trim().toLowerCase();
+  let a = S.meds.slice().sort(byName);
+  if (q) a = a.filter(m => [m.name, m.salt, m.company, m.batch, m.rack, m.barcode].join(' ').toLowerCase().includes(q));
+  if (stockF === 'low') a = a.filter(m => m.qty > 0 && m.qty <= m.min);
+  if (stockF === 'out') a = a.filter(m => m.qty === 0);
+  if (stockF === 'exp') a = a.filter(m => { const s = expStatus(m.expiry); return s.days !== null && s.days <= 90; });
+  const el = $('#stockList');
+  if (!a.length) { el.innerHTML = `<div class="empty"><h3>${S.meds.length ? 'No medicine matches' : 'No medicines yet'}</h3><div>${S.meds.length ? 'Try a different search or filter.' : 'Add your first medicine to begin.'}</div></div>`; return; }
+  el.innerHTML = a.map(m => {
+    const s = expStatus(m.expiry);
+    const qcls = m.qty === 0 ? 'bad' : (m.qty <= m.min ? 'warn' : 'ok');
+    return `<div class="med">
+      <div class="mname">${thumb(m)}<div><b>${esc(m.name)}</b><div class="sub">${m.salt ? `<span>${esc(m.salt)}</span>` : ''}${m.company ? `<span>${esc(m.company)}</span>` : ''}</div></div></div>
+      <div class="meta"><span>Batch ${esc(m.batch || '—')}</span><span class="exp ${s.cls}">Exp ${fmtYM(m.expiry)}${s.tag ? ' (' + s.tag.toLowerCase() + ')' : ''}</span>${m.rack ? `<span>Rack ${esc(m.rack)}</span>` : ''}${m.barcode ? `<span>Code ${esc(m.barcode)}</span>` : ''}</div>
+      <div><span class="pill ${qcls}">${m.qty === 0 ? 'Out' : m.qty}</span></div>
+      <div class="price">${money(m.mrp)}</div>
+      <div class="acts"><button class="btn sm" onclick="medForm('${m.id}')">Edit</button><button class="btn sm txt-bad" onclick="delMed('${m.id}')">Delete</button></div>
+    </div>`;
+  }).join('');
+}
+let formPhoto = '';
+function medForm(id, forIn, code) {
+  medFormForIn = !!forIn && !id;
+  const m = id ? med(id) : {name: '', salt: '', company: '', batch: '', expiry: '', rack: '', buy: '', mrp: '', qty: '', min: 10, barcode: code || '', photo: ''};
+  formPhoto = m.photo || '';
+  openModal(`<h2>${id ? 'Edit medicine' : 'Add medicine'}</h2>
+    <div class="fgrid">
+      <div class="f full"><span>Medicine picture</span>
+        <div class="photorow"><div id="f_photo_prev" class="thumb big"></div>
+          <div class="pbtns"><button type="button" class="btn sm primary" id="f_photo_btn" onclick="togglePhotoMenu()">Add image</button><button type="button" class="btn sm txt-bad" id="f_photo_rm" onclick="formPhoto='';paintPhoto()">Remove</button></div></div>
+        <div id="f_photo_menu" class="photomenu" hidden>
+          <label class="btn">Upload from phone<input type="file" accept="image/*" style="display:none" onchange="pickPhoto(this)"></label>
+          <button type="button" class="btn" onclick="takePhoto()">Take photo with camera</button>
+          <input id="f_cam_input" type="file" accept="image/*" capture="environment" style="display:none" onchange="pickPhoto(this)">
+        </div>
+        <div id="f_cam"></div></div>
+      <div class="f full"><span>Barcode or QR code</span>
+        <input id="f_barcode" value="${esc(m.barcode || '')}" placeholder="Add an image, or type the number">
+        <div class="pbtns" style="margin-top:6px">${codeImageHTML('f_bc', 'setFormCode')}</div>
+        <span style="font-size:12.5px">A barcode scanner device also works: tap the box above and scan.</span></div>
+      <label class="f full">Medicine name<input id="f_name" value="${esc(m.name)}" data-autofocus></label>
+      <label class="f full">Salt or composition<input id="f_salt" value="${esc(m.salt)}"></label>
+      <label class="f">Company<input id="f_company" value="${esc(m.company)}"></label>
+      <label class="f">Rack or shelf<input id="f_rack" value="${esc(m.rack)}"></label>
+      <label class="f">Batch no.<input id="f_batch" value="${esc(m.batch)}"></label>
+      <label class="f">Expiry (month and year)<input id="f_expiry" type="month" value="${esc(m.expiry)}"></label>
+      <label class="f">Purchase price (per unit)<input id="f_buy" type="number" inputmode="decimal" min="0" step="any" value="${m.buy}"></label>
+      <label class="f">MRP (per unit)<input id="f_mrp" type="number" inputmode="decimal" min="0" step="any" value="${m.mrp}"></label>
+      <label class="f">Quantity in stock<input id="f_qty" type="number" inputmode="numeric" min="0" step="1" value="${m.qty}"></label>
+      <label class="f">Alert when stock is at or below<input id="f_min" type="number" inputmode="numeric" min="0" step="1" value="${m.min}"></label>
+    </div>
+    <p class="hint">Sell unit = one strip, bottle or pack. Enter prices for that same unit.${!id && !forIn ? ' A stock in bill is made for the quantity you enter.' : ''}</p>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveMed('${id || ''}')">Save medicine</button></div>`);
+  paintPhoto();
+}
+/* ---------- Stock in ---------- */
+/* ---------- Stock out ---------- */
+
+/* ---------- Stock out (sale with bill) ---------- */
+function viewOut() {
+  cart = cart.filter(c => med(c.medId));
+  $('#view').innerHTML = `<div class="bar"><h1>Stock out</h1></div>
+    <div class="split">
+      <section class="panel pad">
+        <h2 style="margin-bottom:10px">Add medicines</h2>
+        <div class="searchrow"><input id="bq" type="search" placeholder="Search by name, salt, batch or code" value="${esc(billQ)}" oninput="billQ=this.value;listResults()" onkeydown="if(event.key==='Enter')enterSearch('out')" autocomplete="off"><button class="btn" onclick="scanFor('out')">Scan</button></div>
+        <div id="results" style="margin-top:8px"></div>
+      </section>
+      <section class="panel pad">
+        <h2 style="margin-bottom:10px">Bill</h2>
+        <div class="fgrid">
+          <label class="f">Customer name<input value="${esc(cust.name)}" oninput="cust.name=this.value"></label>
+          <label class="f">Phone<input type="tel" inputmode="tel" value="${esc(cust.phone)}" oninput="cust.phone=this.value"></label>
+        </div>
+        <div id="cart" style="margin-top:8px"></div>
+        <div id="totals"></div>
+      </section>
+    </div>`;
+  listResults(); updateCart();
+}
+function listResults() {
+  const q = billQ.trim().toLowerCase();
+  const el = $('#results');
+  if (!q) { el.innerHTML = `<div class="sub" style="padding:8px 2px">Type a medicine name to find it.</div>`; return; }
+  const a = S.meds.filter(m => [m.name, m.salt, m.batch, m.company, m.barcode].join(' ').toLowerCase().includes(q)).sort(byName).slice(0, 25);
+  if (!a.length) { el.innerHTML = `<div class="sub" style="padding:8px 2px">No medicine found.</div>`; return; }
+  el.innerHTML = a.map(m => {
+    const s = expStatus(m.expiry);
+    const blocked = m.qty <= 0 || s.cls === 'bad';
+    const tag = m.qty <= 0 ? '<span class="pill bad">Out</span>' : (s.cls === 'bad' ? '<span class="pill bad">Expired</span>' : `<span class="pill ${m.qty <= m.min ? 'warn' : 'ok'}">${m.qty} left</span>`);
+    return `<button class="res" ${blocked ? 'disabled' : ''} onclick="addToCart('${m.id}')">${thumb(m, 'sm')}<div class="grow"><b>${esc(m.name)}</b><div class="sub"><span>Batch ${esc(m.batch || '—')}</span><span class="exp ${s.cls}">Exp ${fmtYM(m.expiry)}</span></div></div><div style="text-align:right"><div style="font-weight:600">${money(m.mrp)}</div>${tag}</div></button>`;
+  }).join('');
+}
+function addToCart(id) {
+  const m = med(id); if (!m) return;
+  const c = cart.find(x => x.medId === id);
+  if (c) { if (c.qty >= m.qty) return toast('Only ' + m.qty + ' in stock'); c.qty++; }
+  else cart.push({medId: id, qty: 1});
+  updateCart();
+}
+function cartQty(id, d) {
+  const c = cart.find(x => x.medId === id), m = med(id); if (!c || !m) return;
+  const n = c.qty + d;
+  if (n > m.qty) return toast('Only ' + m.qty + ' in stock');
+  c.qty = Math.max(1, n); updateCart();
+}
+function cartSet(id, v) {
+  const c = cart.find(x => x.medId === id), m = med(id); if (!c || !m) return;
+  let n = int(v); if (n < 1) n = 1;
+  if (n > m.qty) { n = m.qty; toast('Only ' + m.qty + ' in stock'); }
+  c.qty = n; updateCart();
+}
+function cartDel(id) { cart = cart.filter(c => c.medId !== id); updateCart(); }
+function calc() {
+  let sub = 0;
+  const items = cart.map(c => {
+    const m = med(c.medId), amount = m.mrp * c.qty; sub += amount;
+    return {medId: m.id, name: m.name, batch: m.batch, expiry: m.expiry, qty: c.qty, mrp: m.mrp, amount};
+  });
+  const discAmt = sub * disc / 100, taxable = sub - discAmt, gstAmt = taxable * gst / 100, raw = taxable + gstAmt;
+  const total = Math.round(raw);
+  return {items, sub, discAmt, gstAmt, total, round: total - raw};
+}
+function updateCart() {
+  const el = $('#cart'); if (!el) return;
+  if (!cart.length) el.innerHTML = `<div class="empty" style="padding:18px 8px">Search and tap a medicine to add it to this bill.</div>`;
+  else el.innerHTML = cart.map(c => {
+    const m = med(c.medId);
+    return `<div class="crow"><div class="grow"><b>${esc(m.name)}</b><div class="sub"><span>Batch ${esc(m.batch || '—')}</span><span>${money(m.mrp)} each</span></div></div>
+      <div class="camt">${money(m.mrp * c.qty)}</div>
+      <div class="qtybox"><button onclick="cartQty('${m.id}',-1)" aria-label="Decrease">−</button><input type="number" inputmode="numeric" min="1" max="${m.qty}" value="${c.qty}" onchange="cartSet('${m.id}',this.value)"><button onclick="cartQty('${m.id}',1)" aria-label="Increase">+</button></div>
+      <div style="text-align:right"><button class="xbtn" onclick="cartDel('${m.id}')">Remove</button></div></div>`;
+  }).join('');
+  updateTotals();
+}
+function updateTotals() {
+  const el = $('#totals'); if (!el) return;
+  if (!cart.length) { el.innerHTML = ''; return; }
+  const t = calc();
+  el.innerHTML = `<div style="border-top:1px solid var(--line);padding-top:10px">
+    <div class="tline"><span>Subtotal</span><span>${money(t.sub)}</span></div>
+    ${disc ? `<div class="tline"><span>Discount (${disc}%)</span><span>− ${money(t.discAmt)}</span></div>` : ''}
+    ${gst ? `<div class="tline"><span>GST (${gst}%)</span><span>${money(t.gstAmt)}</span></div>` : ''}
+    ${Math.abs(t.round) > 0.004 ? `<div class="tline"><span>Round off</span><span>${t.round > 0 ? '+' : '−'} ${money(Math.abs(t.round))}</span></div>` : ''}
+    <div class="tline big"><span>Total</span><span>${money(t.total)}</span></div></div>
+    <div class="actions"><button class="btn ghost" onclick="clearCart()">Clear</button><button class="btn primary" onclick="makeBill()">Generate bill</button></div>`;
+}
+function clearCart() { cart = []; updateCart(); }
+function billHTML(b) {
+  const s = b.shop || {};
+  const rows = b.items.map((it, i) => `<tr><td>${i + 1}</td><td><b>${esc(it.name)}</b><div class="s">Batch ${esc(it.batch || '—')}, Exp ${fmtYM(it.expiry)}</div></td><td class="n">${it.qty}</td><td class="n">${money(it.mrp)}</td><td class="n">${money(it.amount)}</td></tr>`).join('');
+  return `<div class="receipt">
+    ${b.cancelled ? '<div class="void">CANCELLED</div>' : ''}
+    <h2>${esc(s.name || 'Medical Store')}</h2>
+    ${s.address ? `<div class="c">${esc(s.address)}</div>` : ''}
+    ${s.phone ? `<div class="c">Phone: ${esc(s.phone)}</div>` : ''}
+    ${s.dl ? `<div class="c">Drug licence: ${esc(s.dl)}</div>` : ''}
+    <hr>
+    <div class="meta"><span><b>${esc(b.no)}</b></span><span>${fmtDT(b.date)}</span></div>
+    ${(b.customer || b.phone) ? `<div class="meta" style="margin-top:2px"><span>Customer: ${esc(b.customer || '—')}</span>${b.phone ? `<span>${esc(b.phone)}</span>` : ''}</div>` : ''}
+    <hr>
+    <table><thead><tr><th>#</th><th>Medicine</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table>
+    <table style="margin-top:8px">
+      <tr class="tot"><td>Subtotal</td><td class="n">${money(b.sub)}</td></tr>
+      ${b.disc ? `<tr class="tot"><td>Discount (${b.disc}%)</td><td class="n">− ${money(b.discAmt)}</td></tr>` : ''}
+      ${b.gst ? `<tr class="tot"><td>GST (${b.gst}%)</td><td class="n">${money(b.gstAmt)}</td></tr>` : ''}
+      ${Math.abs(b.round) > 0.004 ? `<tr class="tot"><td>Round off</td><td class="n">${b.round > 0 ? '+' : '−'} ${money(Math.abs(b.round))}</td></tr>` : ''}
+      <tr class="grand"><td>Total</td><td class="n">${money(b.total)}</td></tr>
+    </table>
+    <div class="foot">Thank you. Get well soon.<br>Please check batch and expiry before leaving the counter.</div>
+  </div>`;
+}
+function showBill(id) {
+  const b = S.bills.find(x => x.id === id); if (!b) return;
+  openModal(`<div class="recept-wrap">${billHTML(b)}</div>
+    <div class="actions no-print">
+      ${b.cancelled ? '' : `<button class="btn txt-bad" onclick="cancelBill('${b.id}')">Cancel bill</button>`}
+      <button class="btn" onclick="downloadBill('${b.id}')">Download</button>
+      <button class="btn" onclick="printBill()">Print</button>
+      <button class="btn primary" onclick="closeModal()">Done</button>
+    </div>`);
+}
+function printBill() {
+  try { window.print(); } catch (e) { toast('Printing is not available here. Use Download and print the file.'); }
+}
+function downloadBill(id) {
+  const b = S.bills.find(x => x.id === id); if (!b) return;
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(b.no)}</title><style>body{margin:0;padding:16px;background:#fff}${RECEIPT_CSS}</style></head><body>${billHTML(b)}</body></html>`;
+  saveFile(b.no + '.html', doc);
+}
+
+/* ---------- Picture, barcode and QR helpers ---------- */
+function thumb(m, size) {
+  if (!m.photo) return '';
+  return size === 'sm' ? `<img class="thumb sm" src="${esc(m.photo)}" alt="">` : `<img class="thumb" src="${esc(m.photo)}" alt="Picture of ${esc(m.name)}" onclick="showPhoto('${m.id}')">`;
+}
+function showPhoto(id) {
+  const m = med(id); if (!m || !m.photo) return;
+  openModal(`<h2>${esc(m.name)}</h2><img src="${esc(m.photo)}" alt="" style="width:100%;max-height:60vh;object-fit:contain;border-radius:12px;background:var(--bg)">
+    ${m.barcode ? `<p class="sub" style="margin:10px 0 0">Code: <b>${esc(m.barcode)}</b></p>` : ''}
+    <div class="actions"><button class="btn" onclick="medForm('${m.id}')">Edit</button><button class="btn primary" onclick="closeModal()">Close</button></div>`, 'small');
+}
+function paintPhoto() {
+  const el = document.getElementById('f_photo_prev'); if (!el) return;
+  el.innerHTML = formPhoto ? `<img src="${esc(formPhoto)}" alt="">` : 'No picture';
+  const b = document.getElementById('f_photo_btn'); if (b) b.textContent = formPhoto ? 'Change image' : 'Add image';
+  const r = document.getElementById('f_photo_rm'); if (r) r.hidden = !formPhoto;
+  const m = document.getElementById('f_photo_menu'); if (m) m.hidden = true;
+}
+function togglePhotoMenu() {
+  const m = document.getElementById('f_photo_menu'); if (m) m.hidden = !m.hidden;
+  stopPhotoCam();
+}
+/* Camera option: phones open their own camera app; computers with a webcam show a live preview. */
+let photoStream = null;
+function takePhoto() {
+  const phone = navigator.maxTouchPoints > 0 && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (phone || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+    const i = document.getElementById('f_cam_input'); if (i) i.click();
+    return;
+  }
+  startPhotoCam();
+}
+async function startPhotoCam() {
+  const box = document.getElementById('f_cam'); if (!box) return;
+  stopPhotoCam();
+  try {
+    photoStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}, audio: false});
+  } catch (e) {
+    toast('Camera is not available. Allow camera access, or use Upload.');
+    return;
+  }
+  box.innerHTML = `<video id="f_cam_video" playsinline muted autoplay style="width:100%;max-height:260px;border-radius:12px;background:#000;margin-top:8px"></video>
+    <div class="pbtns" style="margin-top:6px"><button type="button" class="btn sm primary" onclick="snapPhoto()">Capture</button><button type="button" class="btn sm" onclick="stopPhotoCam()">Cancel</button></div>`;
+  const v = document.getElementById('f_cam_video');
+  v.srcObject = photoStream;
+  v.play().catch(() => {});
+}
+function stopPhotoCam() {
+  if (photoStream) { photoStream.getTracks().forEach(t => t.stop()); photoStream = null; }
+  const box = document.getElementById('f_cam'); if (box) box.innerHTML = '';
+}
+function snapPhoto() {
+  const v = document.getElementById('f_cam_video');
+  if (!v || !v.videoWidth) return toast('The camera is not ready yet. Try again.');
+  const k = Math.min(1, 500 / Math.max(v.videoWidth, v.videoHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(v.videoWidth * k)); c.height = Math.max(1, Math.round(v.videoHeight * k));
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  formPhoto = c.toDataURL('image/jpeg', 0.7);
+  stopPhotoCam();
+  paintPhoto();
+}
+function resizeImage(file, max) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = reject;
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function pickPhoto(inp) {
+  const f = inp.files && inp.files[0]; inp.value = '';
+  if (!f) return;
+  resizeImage(f, 500).then(url => { formPhoto = url; paintPhoto(); }).catch(() => toast('Could not read this picture. Try another one.'));
+}
+function setFormCode(code) {
+  const el = document.getElementById('f_barcode');
+  if (el) el.value = code;
+  toast('Code added: ' + code);
+}
+let scanStream = null, scanTimer = null;
+function stopScan() {
+  if (scanTimer) { clearInterval(scanTimer); scanTimer = null; }
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+}
+async function startScan(boxId, cb) {
+  stopScan();
+  const box = document.getElementById(boxId); if (!box) return;
+  const canLive = ('BarcodeDetector' in window) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+  if (!canLive) { box.innerHTML = `<p class="hint">Live scanning is not supported on this phone or browser. Use "Add image" or type the code.</p>`; return; }
+  box.innerHTML = `<video id="${boxId}_v" class="scanvid" playsinline muted></video><p class="hint">Point the camera at the code. It fills in by itself.</p>`;
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}}});
+    const v = document.getElementById(boxId + '_v');
+    if (!v) { stopScan(); return; }
+    v.srcObject = scanStream; await v.play();
+    const det = new BarcodeDetector();
+    scanTimer = setInterval(async () => {
+      try {
+        const r = await det.detect(v);
+        if (r.length && r[0].rawValue) { const code = r[0].rawValue; stopScan(); box.innerHTML = ''; cb(code); }
+      } catch (e) {}
+    }, 300);
+  } catch (e) {
+    stopScan();
+    box.innerHTML = `<p class="hint">The camera could not start here. Use "Add image" or type the code.</p>`;
+  }
+}
+function loadScript(src) {
+  return new Promise((resolve, reject) => { const t = document.createElement('script'); t.src = src; t.onload = resolve; t.onerror = reject; document.head.appendChild(t); });
+}
+async function decodeFile(file) {
+  if ('BarcodeDetector' in window) {
+    try {
+      const bmp = await createImageBitmap(file);
+      const r = await new BarcodeDetector().detect(bmp);
+      if (r.length && r[0].rawValue) return r[0].rawValue;
+    } catch (e) {}
+  }
+  if (!window.Html5Qrcode) {
+    try { await loadScript('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js'); }
+    catch (e) { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js'); }
+  }
+  const q = new Html5Qrcode('h5q_holder');
+  const res = await q.scanFile(file, false);
+  try { q.clear(); } catch (e) {}
+  return res;
+}
+async function readCodeFromFile(inp, cb) {
+  const f = inp.files && inp.files[0]; inp.value = '';
+  if (!f) return;
+  toast('Reading the code...');
+  try {
+    const code = await decodeFile(f);
+    if (code) cb(String(code)); else toast('No code found in this photo. Take a closer, sharper photo or type the code.');
+  } catch (e) { toast('Could not read a code from this photo. Type it in instead.'); }
+}
+/* "Add image" for codes: upload a photo, or take one with the camera, and the code is read from it. */
+function codeImageHTML(id, cb) {
+  return `<button type="button" class="btn sm primary" onclick="toggleCodeMenu('${id}')">Add image</button>
+    <div id="${id}_menu" class="photomenu" hidden style="width:100%">
+      <label class="btn">Upload from phone<input type="file" accept="image/*" style="display:none" onchange="readCodeFromFile(this, ${cb})"></label>
+      <button type="button" class="btn" onclick="codeTakePhoto('${id}', ${cb})">Take photo with camera</button>
+      <input id="${id}_cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="readCodeFromFile(this, ${cb})">
+    </div>
+    <div id="${id}_cambox" style="width:100%"></div>`;
+}
+let codeCamStream = null;
+function toggleCodeMenu(id) {
+  const m = document.getElementById(id + '_menu'); if (m) m.hidden = !m.hidden;
+  stopCodeCam(id);
+}
+function codeTakePhoto(id, cb) {
+  const phone = navigator.maxTouchPoints > 0 && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (phone || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+    const i = document.getElementById(id + '_cam'); if (i) i.click();
+    return;
+  }
+  startCodeCam(id, cb);
+}
+async function startCodeCam(id, cb) {
+  const box = document.getElementById(id + '_cambox'); if (!box) return;
+  stopScan(); stopCodeCam(id);
+  try {
+    codeCamStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}, audio: false});
+  } catch (e) {
+    toast('Camera is not available. Allow camera access, or use Upload.');
+    return;
+  }
+  box.innerHTML = `<video id="${id}_vid" class="scanvid" playsinline muted autoplay></video>
+    <div class="pbtns" style="margin-top:6px"><button type="button" class="btn sm primary" id="${id}_snap">Capture</button><button type="button" class="btn sm" onclick="stopCodeCam('${id}')">Cancel</button></div>`;
+  const v = document.getElementById(id + '_vid');
+  v.srcObject = codeCamStream;
+  v.play().catch(() => {});
+  document.getElementById(id + '_snap').onclick = () => snapCode(id, cb);
+}
+function stopCodeCam(id) {
+  if (codeCamStream) { codeCamStream.getTracks().forEach(t => t.stop()); codeCamStream = null; }
+  if (id) { const b = document.getElementById(id + '_cambox'); if (b) b.innerHTML = ''; }
+}
+async function snapCode(id, cb) {
+  const v = document.getElementById(id + '_vid');
+  if (!v || !v.videoWidth) return toast('The camera is not ready yet. Try again.');
+  const c = document.createElement('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+  stopCodeCam(id);
+  if (!blob) return toast('Could not capture the picture. Try again.');
+  readCodeFromFile({files: [new File([blob], 'code.jpg', {type: 'image/jpeg'})], value: ''}, cb);
+}
+function scanFor(kind) {
+  openModal(`<h2>Read a barcode or QR code</h2><p class="hint" style="margin-top:0">Tap Add image, then upload a photo or take one of the barcode or QR code.</p>
+    <div class="actions" style="justify-content:flex-start">${codeImageHTML('sc', "c => applyCode('" + kind + "', c)")}<button class="btn ghost" onclick="closeModal()">Close</button></div>`, 'small');
+}
+function byCode(code) { const c = String(code).trim().toLowerCase(); return S.meds.filter(m => m.barcode && m.barcode.toLowerCase() === c); }
+function applyCode(kind, code) {
+  closeModal();
+  const hits = byCode(code);
+  if (kind === 'stock') { stockQ = code; const el = $('#sq'); if (el) el.value = code; listStock(); if (!hits.length) toast('No medicine has code ' + code); return; }
+  if (kind === 'out') {
+    const ok = hits.filter(m => m.qty > 0 && expStatus(m.expiry).cls !== 'bad').sort((a, b) => (a.expiry || '9999').localeCompare(b.expiry || '9999'));
+    if (ok.length) { addToCart(ok[0].id); toast(ok[0].name + ' added'); billQ = ''; const el = $('#bq'); if (el) el.value = ''; listResults(); return; }
+    billQ = code; const el = $('#bq'); if (el) el.value = code; listResults();
+    toast(hits.length ? 'This medicine is out of stock or expired' : 'No medicine has code ' + code);
+    return;
+  }
+  if (kind === 'in') {
+    if (hits.length === 1) { addToIn(hits[0].id); toast(hits[0].name + ' added'); inQ = ''; const el = $('#iq'); if (el) el.value = ''; listInResults(); return; }
+    if (hits.length > 1) { inQ = code; const el = $('#iq'); if (el) el.value = code; listInResults(); toast('Several batches share this code. Tap the right one.'); return; }
+    toast('New code. Add this medicine first.'); medForm(null, true, code);
+  }
+}
+function enterSearch(kind) {
+  const q = (kind === 'out' ? billQ : inQ).trim();
+  if (q && byCode(q).length) applyCode(kind, q);
+}
+
+/* ---------- History ---------- */
+let histFrom = '', histTo = '';
+const pad2 = n => String(n).padStart(2, '0');
+const toLocalInput = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + 'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+function inRange(iso) {
+  const t = new Date(iso).getTime();
+  if (histFrom && t < new Date(histFrom).getTime()) return false;
+  if (histTo && t > new Date(histTo).getTime() + 59999) return false;
+  return true;
+}
+function setRange(k) {
+  const n = new Date(), y = n.getFullYear(), m = n.getMonth(), d = n.getDate();
+  let f = null, t = null;
+  if (k === 'today') { f = new Date(y, m, d, 0, 0); t = new Date(y, m, d, 23, 59); }
+  else if (k === 'yest') { f = new Date(y, m, d - 1, 0, 0); t = new Date(y, m, d - 1, 23, 59); }
+  else if (k === 'week') { f = new Date(y, m, d - 6, 0, 0); t = new Date(y, m, d, 23, 59); }
+  else if (k === 'month') { f = new Date(y, m, 1, 0, 0); t = new Date(y, m, d, 23, 59); }
+  histFrom = f ? toLocalInput(f) : ''; histTo = t ? toLocalInput(t) : '';
+  viewHist();
+}
+function rangeText() {
+  const f = histFrom ? fmtDT(new Date(histFrom).toISOString()) : '', t = histTo ? fmtDT(new Date(histTo).toISOString()) : '';
+  if (!f && !t) return 'Showing all dates';
+  return 'Showing ' + (f ? 'from ' + f : 'everything') + (t ? ' to ' + t : ' onwards');
+}
+/* ---------- Settings & backup ---------- */
+
+/* ---------- Stock in (purchase bill) ---------- */
+function goIn(id) { go('in'); if (id) addToIn(id); }
+function viewIn() {
+  inCart = inCart.filter(l => med(l.medId));
+  if (!S.meds.length) {
+    $('#view').innerHTML = `<div class="bar"><h1>Stock in</h1></div><div class="panel empty"><h3>Add a medicine first</h3><div>Add the medicine, then receive stock with a stock in bill.</div><button class="btn primary" onclick="medForm(null,true)">Add medicine</button></div>`;
+    return;
+  }
+  $('#view').innerHTML = `<div class="bar"><h1>Stock in</h1><button class="btn" onclick="medForm(null,true)">Add new medicine</button></div>
+    <div class="split">
+      <section class="panel pad">
+        <h2 style="margin-bottom:10px">Add medicines</h2>
+        <div class="searchrow"><input id="iq" type="search" placeholder="Search by name, salt, batch or code" value="${esc(inQ)}" oninput="inQ=this.value;listInResults()" onkeydown="if(event.key==='Enter')enterSearch('in')" autocomplete="off"><button class="btn" onclick="scanFor('in')">Scan</button></div>
+        <div id="iresults" style="margin-top:8px"></div>
+        <p class="hint">Tap a medicine again to add another batch of it.</p>
+      </section>
+      <section class="panel pad">
+        <h2 style="margin-bottom:10px">Stock in bill</h2>
+        <div class="fgrid">
+          <label class="f">Supplier name<input value="${esc(sup.name)}" oninput="sup.name=this.value"></label>
+          <label class="f">Supplier phone<input type="tel" inputmode="tel" value="${esc(sup.phone)}" oninput="sup.phone=this.value"></label>
+          <label class="f full">Supplier invoice no. (optional)<input value="${esc(sup.inv)}" oninput="sup.inv=this.value"></label>
+        </div>
+        <div id="icart" style="margin-top:8px"></div>
+        <div id="itotals"></div>
+      </section>
+    </div>`;
+  listInResults(); updateInCart();
+}
+function listInResults() {
+  const q = inQ.trim().toLowerCase();
+  const el = $('#iresults');
+  if (!q) { el.innerHTML = `<div class="sub" style="padding:8px 2px">Type a medicine name to find it.</div>`; return; }
+  const a = S.meds.filter(m => [m.name, m.salt, m.batch, m.company, m.barcode].join(' ').toLowerCase().includes(q)).sort(byName).slice(0, 25);
+  if (!a.length) { el.innerHTML = `<div class="sub" style="padding:8px 2px">No medicine found. Use "Add new medicine".</div>`; return; }
+  el.innerHTML = a.map(m => {
+    const s = expStatus(m.expiry);
+    return `<button class="res" onclick="addToIn('${m.id}')">${thumb(m, 'sm')}<div class="grow"><b>${esc(m.name)}</b><div class="sub"><span>Batch ${esc(m.batch || '—')}</span><span class="exp ${s.cls}">Exp ${fmtYM(m.expiry)}</span></div></div><div style="text-align:right"><div class="sub">In stock</div><span class="pill ${m.qty === 0 ? 'bad' : (m.qty <= m.min ? 'warn' : 'ok')}">${m.qty}</span></div></button>`;
+  }).join('');
+}
+function addToIn(id) {
+  const m = med(id); if (!m) return;
+  inCart.push({lid: uid(), medId: id, qty: 1, batch: m.batch || '', expiry: m.expiry || '', buy: m.buy || 0, mrp: m.mrp || 0});
+  updateInCart();
+}
+function inSet(lid, f, v) {
+  const l = inCart.find(x => x.lid === lid); if (!l) return;
+  if (f === 'qty') l.qty = Math.max(0, int(v));
+  else if (f === 'buy' || f === 'mrp') l[f] = Math.max(0, num(v));
+  else l[f] = v;
+  const a = document.getElementById('pa_' + lid);
+  if (a) a.textContent = money(l.buy * l.qty);
+  updateInTotals();
+}
+function inDel(lid) { inCart = inCart.filter(l => l.lid !== lid); updateInCart(); }
+function clearIn() { inCart = []; updateInCart(); }
+function updateInCart() {
+  const el = $('#icart'); if (!el) return;
+  if (!inCart.length) el.innerHTML = `<div class="empty" style="padding:18px 8px">Search and tap a medicine to add it to this bill.</div>`;
+  else el.innerHTML = inCart.map(l => {
+    const m = med(l.medId);
+    return `<div class="pline"><div class="head"><div class="grow"><b>${esc(m.name)}</b><div class="sub">In stock now: ${m.qty}</div></div><button class="xbtn" onclick="inDel('${l.lid}')">Remove</button></div>
+      <div class="fgrid">
+        <label class="f">Quantity received<input type="number" inputmode="numeric" min="1" step="1" value="${l.qty || ''}" oninput="inSet('${l.lid}','qty',this.value)"></label>
+        <label class="f">Batch no.<input value="${esc(l.batch)}" oninput="inSet('${l.lid}','batch',this.value)"></label>
+        <label class="f">Expiry<input type="month" value="${esc(l.expiry)}" onchange="inSet('${l.lid}','expiry',this.value)"></label>
+        <label class="f">Purchase price (each)<input type="number" inputmode="decimal" min="0" step="any" value="${l.buy || ''}" oninput="inSet('${l.lid}','buy',this.value)"></label>
+        <label class="f">MRP (each)<input type="number" inputmode="decimal" min="0" step="any" value="${l.mrp || ''}" oninput="inSet('${l.lid}','mrp',this.value)"></label>
+        <div class="f">Amount<b style="font-size:16px;color:var(--ink)" id="pa_${l.lid}">${money(l.buy * l.qty)}</b></div>
+      </div></div>`;
+  }).join('');
+  updateInTotals();
+}
+function updateInTotals() {
+  const el = $('#itotals'); if (!el) return;
+  if (!inCart.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="border-top:1px solid var(--line);padding-top:10px">
+    <div class="tline"><span>Medicines</span><span>${inCart.length}</span></div>
+    <div class="tline"><span>Units received</span><span>${sum(inCart, l => l.qty)}</span></div>
+    <div class="tline big"><span>Total purchase</span><span>${money(sum(inCart, l => l.buy * l.qty))}</span></div></div>
+    <div class="actions"><button class="btn ghost" onclick="clearIn()">Clear</button><button class="btn primary" onclick="makePurchase()">Generate stock in bill</button></div>`;
+}
+function purchaseHTML(p) {
+  const s = p.shop || {};
+  const rows = p.items.map((it, i) => `<tr><td>${i + 1}</td><td><b>${esc(it.name)}</b><div class="s">Batch ${esc(it.batch || '—')}, Exp ${fmtYM(it.expiry)}, MRP ${money(it.mrp)}</div></td><td class="n">${it.qty}</td><td class="n">${money(it.buy)}</td><td class="n">${money(it.amount)}</td></tr>`).join('');
+  return `<div class="receipt">
+    ${p.cancelled ? '<div class="void">CANCELLED</div>' : ''}
+    <h2>${esc(s.name || 'Medical Store')}</h2>
+    ${s.address ? `<div class="c">${esc(s.address)}</div>` : ''}
+    ${s.phone ? `<div class="c">Phone: ${esc(s.phone)}</div>` : ''}
+    ${s.dl ? `<div class="c">Drug licence: ${esc(s.dl)}</div>` : ''}
+    <div class="c" style="margin-top:4px"><b>Stock in bill</b></div>
+    <hr>
+    <div class="meta"><span><b>${esc(p.no)}</b></span><span>${fmtDT(p.date)}</span></div>
+    ${(p.supplier || p.phone || p.inv) ? `<div class="meta" style="margin-top:2px"><span>Supplier: ${esc(p.supplier || '—')}</span>${p.phone ? `<span>${esc(p.phone)}</span>` : ''}</div>` : ''}
+    ${p.inv ? `<div class="meta"><span>Supplier invoice: ${esc(p.inv)}</span></div>` : ''}
+    <hr>
+    <table><thead><tr><th>#</th><th>Medicine</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table>
+    <table style="margin-top:8px"><tr class="grand"><td>Total purchase</td><td class="n">${money(p.total)}</td></tr></table>
+    <div class="foot">Stock received and added to inventory.</div>
+  </div>`;
+}
+function showPurchase(id) {
+  const p = S.purchases.find(x => x.id === id); if (!p) return;
+  openModal(`<div class="recept-wrap">${purchaseHTML(p)}</div>
+    <div class="actions no-print">
+      ${p.cancelled ? '' : `<button class="btn txt-bad" onclick="cancelPurchase('${p.id}')">Cancel bill</button>`}
+      <button class="btn" onclick="downloadPurchase('${p.id}')">Download</button>
+      <button class="btn" onclick="printBill()">Print</button>
+      <button class="btn primary" onclick="closeModal()">Done</button>
+    </div>`);
+}
+function downloadPurchase(id) {
+  const p = S.purchases.find(x => x.id === id); if (!p) return;
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(p.no)}</title><style>body{margin:0;padding:16px;background:#fff}${RECEIPT_CSS}</style></head><body>${purchaseHTML(p)}</body></html>`;
+  saveFile(p.no + '.html', doc);
+}
+
+/* ---------- History (uses date filter helpers above) ---------- */
+function viewHist() {
+  const seg = [['out', 'Stock out'], ['in', 'Stock in']].map(s => `<button class="${histTab === s[0] ? 'on' : ''}" onclick="histTab='${s[0]}';viewHist()">${s[1]}</button>`).join('');
+  const chips = [['today', 'Today'], ['yest', 'Yesterday'], ['week', 'Last 7 days'], ['month', 'This month'], ['all', 'All dates']].map(c => `<button class="chip" onclick="setRange('${c[0]}')">${c[1]}</button>`).join('');
+  let stats;
+  if (histTab === 'out') {
+    const inr = S.bills.filter(b => inRange(b.date)), live = inr.filter(b => !b.cancelled);
+    stats = `<div class="stat"><b>${money(sum(live, b => b.total))}</b><span>Sales</span></div>
+      <div class="stat"><b>${live.length}</b><span>Bills made</span></div>
+      <div class="stat"><b>${sum(live, b => sum(b.items, i => i.qty))}</b><span>Units sold</span></div>
+      ${inr.length - live.length ? `<div class="stat"><b>${inr.length - live.length}</b><span>Cancelled bills</span></div>` : ''}`;
+  } else {
+    const inr = S.purchases.filter(p => inRange(p.date)), live = inr.filter(p => !p.cancelled);
+    stats = `<div class="stat"><b>${money(sum(live, p => p.total))}</b><span>Purchase amount</span></div>
+      <div class="stat"><b>${live.length}</b><span>Stock in bills</span></div>
+      <div class="stat"><b>${sum(live, p => sum(p.items, i => i.qty))}</b><span>Units received</span></div>
+      ${inr.length - live.length ? `<div class="stat"><b>${inr.length - live.length}</b><span>Cancelled bills</span></div>` : ''}`;
+  }
+  $('#view').innerHTML = `<div class="bar"><h1>History</h1><button class="btn" onclick="exportHist()">Download as CSV</button></div><div class="seg">${seg}</div>
+    <div class="panel pad" style="margin-bottom:12px">
+      <div class="fgrid">
+        <label class="f">From (date and time)<input type="datetime-local" value="${esc(histFrom)}" onchange="histFrom=this.value;viewHist()"></label>
+        <label class="f">To (date and time)<input type="datetime-local" value="${esc(histTo)}" onchange="histTo=this.value;viewHist()"></label>
+      </div>
+      <div class="chips">${chips}</div>
+      <p class="hint">${rangeText()}</p>
+    </div>
+    <div class="panel stats" style="margin-bottom:12px">${stats}</div>
+    <div class="panel pad" style="margin-bottom:12px"><input type="search" placeholder="Search bill number, ${histTab === 'out' ? 'customer' : 'supplier'} or medicine" value="${esc(histQ)}" oninput="histQ=this.value;listBills()" autocomplete="off"></div>
+    <div class="panel list" id="billList"></div>`;
+  listBills();
+}
+function outEntries() {
+  const bills = S.bills.filter(b => inRange(b.date)).map(b => ({date: b.date, kind: 'bill', b, hay: (b.no + ' ' + b.customer + ' ' + b.phone + ' ' + b.items.map(i => i.name).join(' ')).toLowerCase()}));
+  const manual = S.txns.filter(x => x.type === 'OUT' && !/^(INV|PUR)-/.test(String(x.note || '')) && inRange(x.date)).map(t => ({date: t.date, kind: 'manual', t, hay: (t.name + ' ' + (t.note || '')).toLowerCase()}));
+  return bills.concat(manual).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+function inEntries() {
+  const purs = S.purchases.filter(p => inRange(p.date)).map(p => ({date: p.date, kind: 'pur', p, hay: (p.no + ' ' + p.supplier + ' ' + p.phone + ' ' + p.inv + ' ' + p.items.map(i => i.name).join(' ')).toLowerCase()}));
+  const manual = S.txns.filter(x => x.type === 'IN' && !/^PUR-/.test(String(x.note || '')) && inRange(x.date)).map(t => ({date: t.date, kind: 'manual', t, hay: (t.name + ' ' + (t.note || '')).toLowerCase()}));
+  return purs.concat(manual).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+function listBills() {
+  const q = histQ.trim().toLowerCase();
+  let a = histTab === 'out' ? outEntries() : inEntries();
+  if (q) a = a.filter(e => e.hay.includes(q));
+  const el = $('#billList');
+  if (!a.length) { el.innerHTML = `<div class="empty"><h3>Nothing found</h3><div>Try another search or change the dates.</div></div>`; return; }
+  el.innerHTML = a.slice(0, 300).map(e => {
+    if (e.kind === 'manual') return txnRow(e.t);
+    if (e.kind === 'pur') {
+      const p = e.p;
+      return `<div class="row"><div class="grow"><b>${esc(p.no)}</b> ${p.cancelled ? '<span class="pill bad">Cancelled</span>' : ''}<div class="sub"><span>${fmtDT(p.date)}</span><span>${esc(p.supplier || 'No supplier')}</span><span>${p.items.length} items</span></div></div><div style="font-weight:700;font-variant-numeric:tabular-nums">${money(p.total)}</div><button class="btn sm" onclick="showPurchase('${p.id}')">Open</button></div>`;
+    }
+    const b = e.b;
+    return `<div class="row"><div class="grow"><b>${esc(b.no)}</b> ${b.cancelled ? '<span class="pill bad">Cancelled</span>' : ''}<div class="sub"><span>${fmtDT(b.date)}</span><span>${esc(b.customer || 'Walk-in')}</span><span>${b.items.length} items</span></div></div><div style="font-weight:700;font-variant-numeric:tabular-nums">${money(b.total)}</div><button class="btn sm" onclick="showBill('${b.id}')">Open</button></div>`;
+  }).join('');
+}
+function exportHist() {
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  let head, rows;
+  if (histTab === 'out') {
+    head = ['Bill no', 'Date and time', 'Customer', 'Phone', 'Items', 'Total', 'Status'];
+    rows = outEntries().map(e => e.kind === 'bill'
+      ? [e.b.no, fmtDT(e.b.date), e.b.customer, e.b.phone, e.b.items.map(i => i.name + ' x' + i.qty).join('; '), e.b.total, e.b.cancelled ? 'Cancelled' : 'Completed']
+      : ['', fmtDT(e.t.date), '', '', e.t.name + ' x' + e.t.qty, '', e.t.note || 'Manual stock out']);
+  } else {
+    head = ['Bill no', 'Date and time', 'Supplier', 'Phone', 'Supplier invoice', 'Items', 'Total', 'Status'];
+    rows = inEntries().map(e => e.kind === 'pur'
+      ? [e.p.no, fmtDT(e.p.date), e.p.supplier, e.p.phone, e.p.inv, e.p.items.map(i => i.name + ' x' + i.qty).join('; '), e.p.total, e.p.cancelled ? 'Cancelled' : 'Completed']
+      : ['', fmtDT(e.t.date), '', '', '', e.t.name + ' x' + e.t.qty, '', e.t.note || 'Manual stock in']);
+  }
+  saveFile('stock-' + histTab + '-history.csv', [head.map(q).join(',')].concat(rows.map(r => r.map(q).join(','))).join('\n'));
+}
+
+
+/* ---------- Saving data on this phone ---------- */
+let busy = false;
+async function api(action, data) {
+  if (busy) return null;
+  busy = true;
+  try {
+    const j = await LocalDB.call(action, data || {});
+    if (!j || !j.ok) { toast((j && j.error) || 'Something went wrong.'); return null; }
+    if (j.state) S = j.state;
+    return j;
+  } catch (e) {
+    toast('Could not save: ' + (e && e.message ? e.message : e));
+    return null;
+  } finally {
+    busy = false;
+  }
+}
+function saveFile(filename, data) {
+  const isCsv = /\.csv$/i.test(filename);
+  const type = /\.html$/i.test(filename) ? 'text/html;charset=utf-8' : (isCsv ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8');
+  const blob = new Blob([isCsv ? '\ufeff' + data : data], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+
+/* ---------- Medicines ---------- */
+async function saveMed(id) {
+  const name = val('f_name').trim();
+  const mrp = num(val('f_mrp'));
+  if (!name) return toast('Enter the medicine name');
+  if (mrp <= 0) return toast('Enter the MRP');
+  const rec = {
+    name, salt: val('f_salt').trim(), company: val('f_company').trim(), rack: val('f_rack').trim(),
+    batch: val('f_batch').trim(), expiry: val('f_expiry'), buy: num(val('f_buy')), mrp,
+    qty: Math.max(0, int(val('f_qty'))), min: Math.max(0, int(val('f_min'))),
+    barcode: val('f_barcode').trim()
+  };
+  const photo = formPhoto ? (formPhoto.indexOf('data:') === 0 ? formPhoto : 'keep') : '';
+  const forIn = !id && medFormForIn;
+  const j = await api('med_save', Object.assign({id: id || null, photo, forIn}, rec));
+  if (!j) return;
+  if (forIn) {
+    inCart.push({lid: uid(), medId: j.id, qty: rec.qty > 0 ? rec.qty : 1, batch: rec.batch, expiry: rec.expiry, buy: rec.buy, mrp: rec.mrp});
+    medFormForIn = false;
+  }
+  closeModal();
+  toast(tab === 'in' ? 'Medicine added to this stock in bill' : 'Medicine saved');
+  render();
+  if (j.purchaseId) {
+    const p = S.purchases.find(x => x.id === j.purchaseId);
+    showPurchase(j.purchaseId);
+    toast('Medicine saved. Stock in bill ' + (p ? p.no : '') + ' created');
+  }
+}
+function delMed(id) {
+  const m = med(id);
+  confirmBox('Delete ' + m.name + '?', 'Delete', async () => {
+    const j = await api('med_delete', {id});
+    if (!j) return;
+    cart = cart.filter(c => c.medId !== id);
+    inCart = inCart.filter(l => l.medId !== id);
+    toast('Medicine deleted'); render();
+  });
+}
+async function loadSample() {
+  const j = await api('sample');
+  if (j) { toast('Sample medicines added'); render(); }
+}
+
+/* ---------- Sale bill ---------- */
+async function makeBill() {
+  if (!cart.length) return toast('Add at least one medicine');
+  for (const c of cart) {
+    const m = med(c.medId);
+    if (!m) return toast('A medicine in this bill was removed');
+    if (c.qty > m.qty) return toast(m.name + ': only ' + m.qty + ' in stock');
+    if (expStatus(m.expiry).cls === 'bad') return toast(m.name + ' is expired. Remove it from the bill.');
+  }
+  const j = await api('sale_create', {customer: cust.name.trim(), phone: cust.phone.trim(), items: cart.map(c => ({medId: c.medId, qty: c.qty}))});
+  if (!j) return;
+  cart = []; cust = {name: '', phone: ''}; disc = 0;
+  viewOut();
+  const b = S.bills.find(x => x.id === j.id);
+  showBill(j.id);
+  toast('Bill ' + (b ? b.no : '') + ' saved and stock updated');
+}
+function cancelBill(id) {
+  const b = S.bills.find(x => x.id === id); if (!b || b.cancelled) return;
+  confirmBox('Cancel ' + b.no + '? Stock will be put back.', 'Cancel bill', async () => {
+    const j = await api('sale_cancel', {id});
+    if (!j) return;
+    toast(b.no + ' cancelled'); render(); showBill(id);
+  });
+}
+
+/* ---------- Purchase (stock in) bill ---------- */
+async function makePurchase() {
+  if (!inCart.length) return toast('Add at least one medicine');
+  for (const l of inCart) {
+    const m = med(l.medId);
+    if (!m) return toast('A medicine in this bill was removed');
+    if (l.qty <= 0) return toast(m.name + ': enter the quantity received');
+    if (l.mrp <= 0) return toast(m.name + ': enter the MRP');
+  }
+  const j = await api('purchase_create', {
+    supplier: sup.name.trim(), phone: sup.phone.trim(), inv: sup.inv.trim(),
+    lines: inCart.map(l => ({medId: l.medId, qty: l.qty, batch: l.batch, expiry: l.expiry, buy: l.buy, mrp: l.mrp}))
+  });
+  if (!j) return;
+  inCart = []; sup = {name: '', phone: '', inv: ''};
+  viewIn();
+  const p = S.purchases.find(x => x.id === j.id);
+  showPurchase(j.id);
+  toast('Bill ' + (p ? p.no : '') + ' saved and stock added');
+}
+function cancelPurchase(id) {
+  const p = S.purchases.find(x => x.id === id); if (!p || p.cancelled) return;
+  for (const it of p.items) {
+    const m = med(it.medId);
+    if (!m || m.qty < it.qty) return toast('Cannot cancel: some of ' + it.name + ' is already sold or removed.');
+  }
+  confirmBox('Cancel ' + p.no + '? Stock will be reduced again.', 'Cancel bill', async () => {
+    const j = await api('purchase_cancel', {id});
+    if (!j) return;
+    toast(p.no + ' cancelled'); render(); showPurchase(id);
+  });
+}
+
+/* ---------- Profit (sales minus the buying price of what was sold) ---------- */
+const pd2 = n => String(n).padStart(2, '0');
+const ymd = d => d.getFullYear() + '-' + pd2(d.getMonth() + 1) + '-' + pd2(d.getDate());
+let pFrom = ymd(new Date(new Date().getFullYear(), new Date().getMonth(), 1)), pTo = ymd(new Date());
+
+function inPRange(iso) {
+  const t = new Date(iso).getTime();
+  if (pFrom && t < new Date(pFrom + 'T00:00:00').getTime()) return false;
+  if (pTo && t > new Date(pTo + 'T23:59:59.999').getTime()) return false;
+  return true;
+}
+function calcProfit(bills) {
+  const live = bills.filter(b => !b.cancelled);
+  let sales = 0, cost = 0, units = 0, noCost = 0, est = false;
+  const byMed = {}, byDay = {};
+  live.forEach(b => {
+    sales += b.total;
+    const day = ymd(new Date(b.date));
+    const d = byDay[day] || (byDay[day] = {day, sales: 0, cost: 0, bills: 0});
+    d.sales += b.total; d.bills++;
+    b.items.forEach(i => {
+      const c = (i.buy || 0) * i.qty;
+      cost += c; d.cost += c; units += i.qty;
+      if (!(i.buy > 0)) noCost++;
+      if (i.est) est = true;
+      const k = i.medId + '|' + i.name;
+      const m = byMed[k] || (byMed[k] = {name: i.name, qty: 0, sales: 0, cost: 0});
+      m.qty += i.qty; m.sales += i.amount; m.cost += c;
+    });
+  });
+  const profit = sales - cost;
+  return {live, sales, cost, profit, units, noCost, est, margin: sales > 0 ? profit / sales * 100 : 0,
+    meds: Object.values(byMed).map(m => Object.assign(m, {profit: m.sales - m.cost})).sort((a, b) => b.profit - a.profit),
+    days: Object.values(byDay).map(d => Object.assign(d, {profit: d.sales - d.cost})).sort((a, b) => b.day.localeCompare(a.day))};
+}
+function todayProfit() { return calcProfit(S.bills.filter(b => sameDay(b.date))); }
+
+function pRange(k) {
+  const n = new Date(), y = n.getFullYear(), m = n.getMonth(), d = n.getDate();
+  let f = null, t = null;
+  if (k === 'today') { f = new Date(y, m, d); t = f; }
+  else if (k === 'yest') { f = new Date(y, m, d - 1); t = f; }
+  else if (k === 'week') { f = new Date(y, m, d - 6); t = new Date(y, m, d); }
+  else if (k === 'month') { f = new Date(y, m, 1); t = new Date(y, m, d); }
+  else if (k === 'last') { f = new Date(y, m - 1, 1); t = new Date(y, m, 0); }
+  pFrom = f ? ymd(f) : ''; pTo = t ? ymd(t) : '';
+  viewProfit();
+}
+const pDate = s => new Date(s + 'T00:00:00').toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'});
+function pText() {
+  if (!pFrom && !pTo) return 'Showing all dates';
+  if (pFrom && pTo && pFrom > pTo) return 'The From date is after the To date. Please fix the dates.';
+  return 'Showing ' + (pFrom ? 'from ' + pDate(pFrom) : 'everything') + (pTo ? ' to ' + pDate(pTo) : ' onwards');
+}
+const plColor = n => n < 0 ? 'var(--bad)' : 'var(--ok)';
+
+function viewProfit() {
+  const r = calcProfit(S.bills.filter(b => inPRange(b.date)));
+  const chips = [['today', 'Today'], ['yest', 'Yesterday'], ['week', 'Last 7 days'], ['month', 'This month'], ['last', 'Last month'], ['all', 'All dates']]
+    .map(c => `<button class="chip" onclick="pRange('${c[0]}')">${c[1]}</button>`).join('');
+  const loss = r.profit < 0;
+  let notes = '';
+  if (r.noCost) notes += `<p class="hint">${r.noCost} sold item${r.noCost === 1 ? ' has' : 's have'} no buying price saved, so its full sale amount counts as profit. Add the buying price in Stock to fix this.</p>`;
+  if (r.est) notes += `<p class="hint">Some older bills did not save the buying price, so the medicine's current buying price was used for them.</p>`;
+  const dayRows = r.days.length ? r.days.map(d => `<div class="row"><div class="grow"><b>${pDate(d.day)}</b><div class="sub"><span>${d.bills} bill${d.bills === 1 ? '' : 's'}</span><span>Sales ${money(d.sales)}</span></div></div><b style="color:${plColor(d.profit)}">${money(d.profit)}</b></div>`).join('')
+    : `<div class="empty">No bills in these dates.</div>`;
+  const medRows = r.meds.length ? r.meds.slice(0, 200).map(m => `<div class="row"><div class="grow"><b>${esc(m.name)}</b><div class="sub"><span>Sold ${m.qty}</span><span>Sales ${money(m.sales)}</span><span>Cost ${money(m.cost)}</span></div></div><b style="color:${plColor(m.profit)}">${money(m.profit)}</b></div>`).join('')
+    : `<div class="empty">No sales in these dates.</div>`;
+  $('#view').innerHTML = `<div class="bar"><h1>Profit</h1><button class="btn" onclick="exportProfit()">Download as CSV</button></div>
+    <div class="panel pad" style="margin-bottom:12px">
+      <div class="fgrid">
+        <label class="f">From date<input type="date" value="${esc(pFrom)}" onchange="pFrom=this.value;viewProfit()"></label>
+        <label class="f">To date<input type="date" value="${esc(pTo)}" onchange="pTo=this.value;viewProfit()"></label>
+      </div>
+      <div class="chips">${chips}</div>
+      <p class="hint">${pText()}</p>
+    </div>
+    <div class="panel stats" style="margin-bottom:12px">
+      <div class="stat ${loss ? 'alert' : 'good'}"><b>${money(r.profit)}</b><span>${loss ? 'Loss' : 'Profit'}</span></div>
+      <div class="stat"><b>${money(r.sales)}</b><span>Sales</span></div>
+      <div class="stat"><b>${money(r.cost)}</b><span>Cost of medicines sold</span></div>
+      <div class="stat"><b>${r.sales > 0 ? r.margin.toFixed(1) + '%' : '—'}</b><span>Profit margin</span></div>
+      <div class="stat"><b>${r.live.length}</b><span>Bills made</span></div>
+      <div class="stat"><b>${r.units}</b><span>Units sold</span></div>
+    </div>
+    ${notes ? `<div class="panel pad" style="margin-bottom:12px">${notes}</div>` : ''}
+    <div class="two">
+      <section class="panel"><div class="pad" style="padding-bottom:8px"><h2>By day</h2></div><div class="list">${dayRows}</div></section>
+      <section class="panel"><div class="pad" style="padding-bottom:8px"><h2>By medicine</h2></div><div class="list">${medRows}</div></section>
+    </div>
+    <p class="hint" style="margin-top:12px">Profit = sales minus the buying price of the medicines sold. Cancelled bills are left out.</p>`;
+}
+function exportProfit() {
+  const r = calcProfit(S.bills.filter(b => inPRange(b.date)));
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const head = ['Medicine', 'Units sold', 'Sales', 'Cost', 'Profit'];
+  const rows = r.meds.map(m => [m.name, m.qty, m.sales.toFixed(2), m.cost.toFixed(2), m.profit.toFixed(2)]);
+  rows.push(['TOTAL (' + pText().replace(/^Showing /, '') + ')', r.units, r.sales.toFixed(2), r.cost.toFixed(2), r.profit.toFixed(2)]);
+  saveFile('profit-report.csv', [head.map(q).join(',')].concat(rows.map(x => x.map(q).join(','))).join('\n'));
+}
+
+/* ---------- Settings and backup ---------- */
+function openSettings() {
+  const s = S.shop;
+  openModal(`<h2>Shop settings</h2>
+    <div class="fgrid">
+      <label class="f full">Shop name (printed on bills)<input id="s_name" value="${esc(s.name)}"></label>
+      <label class="f full">Address<input id="s_addr" value="${esc(s.address)}"></label>
+      <label class="f">Phone<input id="s_phone" value="${esc(s.phone)}"></label>
+      <label class="f">Drug licence no.<input id="s_dl" value="${esc(s.dl)}"></label>
+      <label class="f full">Currency<select id="s_cur">${Object.keys(CURRENCIES).map(k => `<option value="${k}" ${(s.currency || 'INR') === k ? 'selected' : ''}>${esc(CURRENCIES[k].name)}</option>`).join('')}</select></label>
+    </div>
+    <div class="actions"><button class="btn primary" onclick="saveSettings()">Save shop details</button></div>
+    <h2 style="margin:22px 0 6px">Your data</h2>
+    <p class="hint" style="margin-top:0">Everything is saved on this phone only. Save a backup file regularly: if the app is uninstalled or its data is cleared, the data is lost.</p>
+    <div class="actions" style="justify-content:flex-start">
+      <button class="btn" onclick="backupData()">Save backup file</button>
+      <button class="btn" onclick="document.getElementById('restoreFile').click()">Restore backup</button>
+      <input type="file" id="restoreFile" accept=".json,application/json" hidden onchange="restoreBackup(this)">
+      <button class="btn" onclick="exportCSV()">Stock as CSV</button>
+    </div>
+    <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn txt-bad" onclick="eraseAll()">Erase all data</button></div>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Close</button></div>`);
+}
+async function saveSettings() {
+  const j = await api('settings_save', {name: val('s_name').trim(), address: val('s_addr').trim(), phone: val('s_phone').trim(), dl: val('s_dl').trim(), currency: val('s_cur') || 'INR'});
+  if (!j) return;
+  closeModal(); toast('Shop details saved'); render();
+}
+function eraseAll() {
+  confirmBox('Erase all medicines, bills and history?', 'Erase everything', async () => {
+    const j = await api('erase');
+    if (!j) return;
+    cart = []; inCart = [];
+    toast('All data erased'); render();
+  });
+}
+
+async function backupData() {
+  const name = 'medicine-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  const text = LocalDB.exportJSON();
+  try {
+    const f = new File([text], name, {type: 'application/json'});
+    if (navigator.canShare && navigator.canShare({files: [f]})) { await navigator.share({files: [f], title: name}); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  saveFile(name, text);
+  toast('Backup file saved');
+}
+function restoreBackup(inp) {
+  const f = inp.files && inp.files[0]; inp.value = '';
+  if (!f) return;
+  confirmBox('Replace all current data with this backup file?', 'Restore backup', async () => {
+    let text = '';
+    try { text = await f.text(); } catch (e) { return toast('Could not read this file.'); }
+    const j = await LocalDB.restore(text);
+    if (!j.ok) return toast(j.error);
+    S = j.state; cart = []; inCart = [];
+    closeModal(); toast('Backup restored'); render();
+  });
+}
+
+function exportCSV() {
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const head = ['Name', 'Salt', 'Company', 'Batch', 'Expiry', 'Rack', 'Purchase price', 'MRP', 'Quantity', 'Alert level'];
+  const rows = S.meds.slice().sort(byName).map(m => [m.name, m.salt, m.company, m.batch, m.expiry, m.rack, m.buy, m.mrp, m.qty, m.min].map(q).join(','));
+  saveFile('stock-' + new Date().toISOString().slice(0, 10) + '.csv', [head.map(q).join(',')].concat(rows).join('\n'));
+}
+
+/* ---------- Start ---------- */
+let appStarted = false;
+function showFatal(msg) {
+  const v = document.getElementById('view');
+  if (v) v.innerHTML = '<div class="panel pad"><h2>The panel could not start</h2><p class="sub">' + esc(msg) + '</p><p class="sub">Please send this message so it can be fixed.</p></div>';
+}
+window.addEventListener('error', function (ev) {
+  const msg = (ev && ev.message) ? ev.message : 'Unknown error';
+  if (!appStarted) showFatal(msg + (ev && ev.lineno ? ' (app.js line ' + ev.lineno + ')' : ''));
+  else toast('Error: ' + msg);
+});
+window.addEventListener('unhandledrejection', function (ev) {
+  toast('Error: ' + ((ev && ev.reason && ev.reason.message) ? ev.reason.message : 'Something went wrong'));
+});
+try {
+  render();
+  appStarted = true;
+} catch (e) {
+  console.error(e);
+  showFatal(e && e.message ? e.message : String(e));
+}
+
+</script>
+<script>
+LocalDB.init().then(function () {
+  window.APP = { state: LocalDB.buildState() };
+  var s = document.createElement('script');
+  s.textContent = document.getElementById('appjs').textContent;
+  document.body.appendChild(s);
+  if (LocalDB.mode === 'memory' && typeof toast === 'function') {
+    toast('Warning: this phone is blocking storage, so data will be lost when the app closes.');
+  }
+}).catch(function (e) {
+  document.getElementById('view').innerHTML = '<div class="panel pad"><h2>The panel could not start</h2><p class="sub">' + String(e && e.message ? e.message : e) + '</p></div>';
+});
+</script>
+</body>
+</html>
