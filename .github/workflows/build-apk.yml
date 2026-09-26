@@ -56,8 +56,17 @@ jobs:
       - name: Add icon (if provided)
         run: |
           if [ -f "icon.png" ]; then
-            mkdir -p cordova-app/res/icon/android
-            cp icon.png cordova-app/res/icon/android/icon.png
+            sudo apt-get update -y && sudo apt-get install -y imagemagick
+            cd cordova-app
+            mkdir -p res/icon/android
+            convert ../icon.png -resize 36x36 res/icon/android/ldpi.png
+            convert ../icon.png -resize 48x48 res/icon/android/mdpi.png
+            convert ../icon.png -resize 72x72 res/icon/android/hdpi.png
+            convert ../icon.png -resize 96x96 res/icon/android/xhdpi.png
+            convert ../icon.png -resize 144x144 res/icon/android/xxhdpi.png
+            convert ../icon.png -resize 192x192 res/icon/android/xxxhdpi.png
+            ICON_BLOCK='<platform name="android">\n<icon density="ldpi" src="res/icon/android/ldpi.png" />\n<icon density="mdpi" src="res/icon/android/mdpi.png" />\n<icon density="hdpi" src="res/icon/android/hdpi.png" />\n<icon density="xhdpi" src="res/icon/android/xhdpi.png" />\n<icon density="xxhdpi" src="res/icon/android/xxhdpi.png" />\n<icon density="xxxhdpi" src="res/icon/android/xxxhdpi.png" />\n</platform>'
+            sed -i "s#</widget>#${ICON_BLOCK}\n</widget>#" config.xml
           fi
 
       - name: Add Android platform
