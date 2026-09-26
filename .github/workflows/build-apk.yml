@@ -45,7 +45,7 @@ jobs:
         run: |
           cordova create cordova-app com.medicinepanel.app "Medicine Panel"
           rm -rf cordova-app/www/*
-          cp -r www/* cordova-app/www/
+          cp index.html cordova-app/www/
 
       - name: Add icon (if provided)
         run: |
